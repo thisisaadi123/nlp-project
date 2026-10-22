@@ -27,7 +27,8 @@ class Prosody:
     pitch: np.ndarray               # semitones vs speaker median, unvoiced gaps interpolated
     energy: np.ndarray              # dB, per 10 ms frame across the speech span
     prominence: np.ndarray          # z(pitch) + z(energy), smoothed; peaks are stressed syllables
-    pauses: list[tuple[float, float]] = field(default_factory=list)  # (start, end) seconds
+    start: float = 0.0              # where the line begins in the input audio, seconds
+    pauses: list[tuple[float, float]] = field(default_factory=list)  # (start, end) seconds from `start`
     stats: dict[str, float] = field(default_factory=dict)
 
 
@@ -131,7 +132,7 @@ def extract(y: np.ndarray, sr: int = SR) -> Prosody:
         "pause_ratio": float(pause_time / duration),
         "voiced_ratio": float(voiced.sum() / max(active_span.sum(), 1)),
     }
-    return Prosody(duration, pitch, energy, prominence, pauses, stats)
+    return Prosody(duration, pitch, energy, prominence, first * HOP_S, pauses, stats)
 
 
 def extract_file(path: str) -> Prosody:

@@ -1,158 +1,141 @@
-"""Evaluate the prosody score on RAVDESS (24 actors, same sentences in 8 emotions, 2 takes each).
+"""Evaluate the prosody score on RAVDESS.
 
-    python scripts/eval_ravdess.py              # full report
-    python scripts/eval_ravdess.py --fit-scales # also print suggested EXPRESSION_SCALES
+    python scripts/eval_ravdess.py
 
-A good score ranks same-emotion pairs above different-emotion pairs. We measure that with
-AUC: 1.0 = always ranked correctly, 0.5 = no better than chance.
+A good score ranks matching pairs above non-matching pairs. We measure that with AUC:
+1.0 = always ranked correctly, 0.5 = chance. Every pair is scored with an arousal model
+that never saw either actor (leave-actors-out folds), so nothing is tested on its own
+training data.
 
-Download the data first: scripts/fetch_ravdess.sh
+Tests:
+- same speaker, same vs different emotion      (one person's takes)
+- different speakers, same vs different emotion (the game: player is not the original actor)
+- different speakers, same vs opposite arousal  (what prosody can judge; emotion2vec adds the rest)
 """
-import argparse
-import pickle
 import random
 import sys
 from collections import defaultdict
-from multiprocessing import Pool
 from pathlib import Path
 
 import numpy as np
 from scipy.stats import rankdata
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from backend.scoring.compare import EXPRESSION_SCALES, score  # noqa: E402
-from backend.scoring.prosody import extract_file  # noqa: E402
+from backend.scoring.compare import score  # noqa: E402
+from scripts.ravdess_data import EMOTIONS, HIGH_AROUSAL, LOW_AROUSAL, N_FOLDS, fold_of, load  # noqa: E402
+from scripts.train_arousal import fold_models  # noqa: E402
 
-DATA = ROOT / "data/datasets/ravdess"
-CACHE = ROOT / "data/cache/ravdess_prosody.pkl"
-EMOTIONS = {1: "neutral", 2: "calm", 3: "happy", 4: "sad", 5: "angry", 6: "fearful", 7: "disgust", 8: "surprised"}
-COMPONENTS = ["contour", "timing", "emphasis", "emotion"]
+COMPONENTS = ["emotion", "contour", "timing", "emphasis"]
 
 
-def parse(path: Path) -> dict:
-    # 03-01-EE-II-SS-RR-AA.wav: emotion, intensity, statement, repetition, actor
-    _, _, e, i, s, r, a = (int(x) for x in path.stem.split("-"))
-    return {"path": path, "emotion": EMOTIONS[e], "intensity": i, "statement": s, "rep": r, "actor": a}
-
-
-def _extract(path: Path):
-    try:
-        return path, extract_file(str(path))
-    except Exception as e:  # a handful of clips may be near-silent
-        return path, e
-
-
-def load_features() -> list[dict]:
-    items = [parse(p) for p in sorted(DATA.glob("Actor_*/*.wav"))]
-    if not items:
-        sys.exit(f"No RAVDESS files in {DATA}. Run scripts/fetch_ravdess.sh first.")
-    cache = pickle.loads(CACHE.read_bytes()) if CACHE.exists() else {}
-    todo = [it["path"] for it in items if str(it["path"]) not in cache]
-    if todo:
-        print(f"Extracting prosody for {len(todo)} clips...")
-        with Pool() as pool:
-            for path, result in pool.imap_unordered(_extract, todo, chunksize=8):
-                cache[str(path)] = result
-        CACHE.parent.mkdir(parents=True, exist_ok=True)
-        CACHE.write_bytes(pickle.dumps(cache))
-    failed = [p for p, r in cache.items() if isinstance(r, Exception)]
-    if failed:
-        print(f"Skipped {len(failed)} clips with no usable speech")
-    out = []
-    for it in items:
-        r = cache.get(str(it["path"]))
-        if r is not None and not isinstance(r, Exception):
-            out.append({**it, "prosody": r})
-    return out
-
-
-def auc(pos: list[float], neg: list[float]) -> float:
+def auc(pos, neg) -> float:
     ranks = rankdata(np.concatenate([pos, neg]))
     return float((ranks[:len(pos)].sum() - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg)))
 
 
-def run_pairs(pairs):
+def run(pairs, models, use_baseline: bool) -> list[dict]:
     rows = []
-    for ref, att, same in pairs:
-        r = score(ref["prosody"], att["prosody"])
-        rows.append({"same": same, "score": r.score, **r.components,
-                     "pair": (ref["emotion"], att["emotion"])})
+    for a, b, same in pairs:
+        r = score(a["prosody"], b["prosody"],
+                  a["baseline"] if use_baseline else None, b["baseline"] if use_baseline else None,
+                  arousal_model=models[fold_of(a["actor"])])
+        rows.append({"same": same, "score": r.score, **r.components, "pair": (a["emotion"], b["emotion"])})
     return rows
 
 
-def report(title: str, rows: list[dict]) -> None:
+def summary(rows) -> dict[str, float]:
     pos = [r for r in rows if r["same"]]
     neg = [r for r in rows if not r["same"]]
-    print(f"\n== {title}  ({len(pos)} same-emotion pairs, {len(neg)} different-emotion pairs)")
-    print(f"{'':12s}{'AUC':>7s}{'same':>9s}{'diff':>9s}")
-    for k in ["score"] + COMPONENTS:
-        scale = 1 if k == "score" else 100
-        p = [r[k] * scale for r in pos]
-        n = [r[k] * scale for r in neg]
-        print(f"{k:12s}{auc(p, n):7.3f}{np.mean(p):9.1f}{np.mean(n):9.1f}")
-    dub_same = np.mean([r["score"] >= 70 for r in pos])
-    dub_diff = np.mean([r["score"] >= 70 for r in neg])
-    print(f"Dub rate (score >= 70): same emotion {dub_same:.0%}, different emotion {dub_diff:.0%}")
+    out = {k: auc([r[k] for r in pos], [r[k] for r in neg]) for k in ["score"] + COMPONENTS}
+    out["mean_same"] = np.mean([r["score"] for r in pos])
+    out["mean_diff"] = np.mean([r["score"] for r in neg])
+    out["dub_same"] = np.mean([r["score"] >= 70 for r in pos])
+    out["dub_diff"] = np.mean([r["score"] >= 70 for r in neg])
+    return out
 
 
-def emotion_matrix(rows: list[dict]) -> None:
+def print_table(title: str, n_pos: int, n_neg: int, results: dict[str, dict]) -> None:
+    print(f"\n== {title}  ({n_pos} matching / {n_neg} non-matching pairs)")
+    print(f"{'':16s}{'score':>7s}" + "".join(f"{c:>9s}" for c in COMPONENTS)
+          + f"{'mean match':>12s}{'mean other':>12s}{'Dub match':>11s}{'Dub other':>11s}")
+    for label, s in results.items():
+        print(f"{label:16s}{s['score']:7.3f}" + "".join(f"{s[c]:9.3f}" for c in COMPONENTS)
+              + f"{s['mean_same']:12.1f}{s['mean_diff']:12.1f}{s['dub_same']:11.0%}{s['dub_diff']:11.0%}")
+
+
+def cross_pairs(items, n, match, eligible=lambda it: True):
+    """Pairs of different actors from the same held-out fold, saying the same sentence."""
+    groups = defaultdict(list)
+    for it in items:
+        if eligible(it):
+            groups[(fold_of(it["actor"]), it["statement"])].append(it)
+    keys = list(groups)
+    pos, neg = [], []
+    while len(pos) < n or len(neg) < n:
+        a, b = random.sample(groups[random.choice(keys)], 2)
+        if a["actor"] == b["actor"]:
+            continue
+        m = match(a, b)
+        if m and len(pos) < n:
+            pos.append((a, b, True))
+        elif m is False and len(neg) < n:
+            neg.append((a, b, False))
+    return pos + neg
+
+
+def evaluate(title, pairs, models) -> list[dict]:
+    rows = {}
+    results = {}
+    for label, use in (("with baseline", True), ("no baseline", False)):
+        rows[label] = run(pairs, models, use)
+        results[label] = summary(rows[label])
+    n_pos = sum(1 for p in pairs if p[2])
+    print_table(title, n_pos, len(pairs) - n_pos, results)
+    return rows["with baseline"]
+
+
+def emotion_matrix(rows) -> None:
     cells = defaultdict(list)
     for r in rows:
         cells[r["pair"]].append(r["score"])
     names = list(EMOTIONS.values())
-    print("\n== Mean score by emotion (row = original, column = attempt), cross-speaker")
+    print("\n== Mean score, different speakers, with baseline (row = original, column = attempt)")
     print(f"{'':10s}" + "".join(f"{n[:7]:>8s}" for n in names))
     for a in names:
         print(f"{a:10s}" + "".join(
             f"{np.mean(cells[(a, b)]):8.1f}" if cells[(a, b)] else f"{'-':>8s}" for b in names))
 
 
-def demo(items: list[dict], actor: int) -> None:
-    """The angry_1 / angry_2 / sad / flat test, on one actor."""
+def demo(items, models, actor: int) -> None:
     pick = {(it["emotion"], it["intensity"], it["rep"]): it for it in items
             if it["actor"] == actor and it["statement"] == 1}
     ref = pick[("angry", 2, 1)]
     takes = [("angry, take 2", ("angry", 2, 2)), ("sad", ("sad", 2, 1)), ("neutral (flat)", ("neutral", 1, 1)),
              ("happy", ("happy", 2, 1)), ("calm", ("calm", 2, 1))]
-    sex = "male" if actor % 2 else "female"
-    print(f"\n== Demo: actor {actor} ({sex}), reference = angry take 1")
-    print(f"{'attempt':16s}{'score':>7s}{'contour':>9s}{'timing':>8s}{'emph':>7s}{'emotion':>9s}  verdict")
+    print(f"\n== Demo: actor {actor} ({'male' if actor % 2 else 'female'}), reference = angry take 1, with baseline")
+    print(f"{'attempt':16s}{'score':>7s}{'emotion':>9s}{'contour':>9s}{'timing':>8s}{'emph':>7s}"
+          f"{'arousal ref/att':>17s}  verdict")
     for label, key in takes:
-        r = score(ref["prosody"], pick[key]["prosody"])
-        c = r.components
-        print(f"{label:16s}{r.score:7.1f}{c['contour']*100:9.0f}{c['timing']*100:8.0f}"
-              f"{c['emphasis']*100:7.0f}{c['emotion']*100:9.0f}  {r.verdict}")
-
-
-def fit_scales(items: list[dict]) -> None:
-    # Spread of each statistic within one actor and emotion, i.e. take-to-take noise.
-    groups = defaultdict(list)
-    for it in items:
-        groups[(it["actor"], it["emotion"], it["intensity"])].append(it["prosody"].stats)
-    print("\n== Suggested EXPRESSION_SCALES (2x median within-group std)")
-    for k in EXPRESSION_SCALES:
-        sds = [np.std([s[k] for s in g]) for g in groups.values() if len(g) > 1]
-        print(f"    {k!r}: {2 * np.median(sds):.2f},   (current {EXPRESSION_SCALES[k]})")
+        att = pick[key]
+        r = score(ref["prosody"], att["prosody"], ref["baseline"], att["baseline"],
+                  arousal_model=models[fold_of(actor)])
+        c, d = r.components, r.details
+        print(f"{label:16s}{r.score:7.1f}{c['emotion']*100:9.0f}{c['contour']*100:9.0f}{c['timing']*100:8.0f}"
+              f"{c['emphasis']*100:7.0f}{d['ref_arousal']:10.2f} / {d['att_arousal']:.2f}  {r.verdict}")
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--fit-scales", action="store_true")
-    ap.add_argument("--pairs", type=int, default=3000, help="cross-speaker pairs per class")
-    args = ap.parse_args()
     random.seed(0)
+    items = load()
+    models = fold_models(items)
+    print(f"{len(items)} clips, {N_FOLDS} leave-actors-out folds")
 
-    items = load_features()
-    print(f"{len(items)} clips loaded")
-
-    # A: same actor, same sentence. Positive = same emotion and intensity, other take.
     same_speaker = []
-    by_key = defaultdict(list)
+    by_actor = defaultdict(list)
     for it in items:
-        by_key[(it["actor"], it["statement"])].append(it)
-    for group in by_key.values():
+        by_actor[(it["actor"], it["statement"])].append(it)
+    for group in by_actor.values():
         for a in group:
             for b in group:
                 if a is b:
@@ -161,32 +144,22 @@ def main() -> None:
                     same_speaker.append((a, b, True))
                 elif a["emotion"] != b["emotion"]:
                     same_speaker.append((a, b, False))
-    report("Same speaker", run_pairs(same_speaker))
+    evaluate("Same speaker: same vs different emotion", same_speaker, models)
 
-    # B: different actors (the real game: the user is not the original actor).
-    by_statement = defaultdict(list)
-    for it in items:
-        by_statement[it["statement"]].append(it)
-    pos, neg = [], []
-    while len(pos) < args.pairs or len(neg) < args.pairs:
-        group = by_statement[random.choice([1, 2])]
-        a, b = random.sample(group, 2)
-        if a["actor"] == b["actor"]:
-            continue
-        if a["emotion"] == b["emotion"] and len(pos) < args.pairs:
-            pos.append((a, b, True))
-        elif a["emotion"] != b["emotion"] and len(neg) < args.pairs:
-            neg.append((a, b, False))
-    cross = run_pairs(pos + neg)
-    report("Different speakers", cross)
-    report("Different speakers, opposite sex",
-           [r for r, (a, b, _) in zip(cross, pos + neg) if a["actor"] % 2 != b["actor"] % 2])
-    emotion_matrix(cross)
+    def same_emotion(a, b):
+        return a["emotion"] == b["emotion"]
+    cross = cross_pairs(items, 3000, same_emotion)
+    cross_rows = evaluate("Different speakers: same vs different emotion", cross, models)
 
-    demo(items, actor=1)
-    demo(items, actor=2)
-    if args.fit_scales:
-        fit_scales(items)
+    def arousal_group(it):
+        return "high" if it["emotion"] in HIGH_AROUSAL else "low"
+    cross_ar = cross_pairs(items, 3000, lambda a, b: arousal_group(a) == arousal_group(b),
+                           eligible=lambda it: it["emotion"] in HIGH_AROUSAL | LOW_AROUSAL)
+    evaluate("Different speakers: same vs opposite arousal", cross_ar, models)
+
+    emotion_matrix(cross_rows)
+    demo(items, models, actor=1)
+    demo(items, models, actor=2)
 
 
 if __name__ == "__main__":

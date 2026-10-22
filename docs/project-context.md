@@ -87,6 +87,11 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 - Qwen's free tier has a low output-tokens-per-minute cap; keep captioning calls short (`vision_max_tokens`).
 - MMS forced-aligner weights are non-commercial (CC-BY-NC), so word timestamps come from IndicConformer's CTC output.
 - emotion2vec is trained mostly on English/Chinese speech; its accuracy on Indic speech must be checked in step 3.
+- Prosody measures *intensity* (arousal) across speakers (83% on unseen actors) but cannot tell angry from
+  happy; emotion2vec has to supply which emotion. A per-speaker neutral baseline helps, so players record
+  one calibration sentence. Details: `docs/reports/step2.md`.
+- TTS models can read the style instruction aloud ("Say angrily…") with no error. Verify synthetic audio
+  with ASR before using it. Gemini TTS free tier allows ~10 requests per model per day.
 
 ## Status
 
@@ -94,7 +99,7 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 |---|---|
 | 0. Setup | **Mac done** (all checks pass). **Omen done** (all checks pass; see `docs/reports/omen-step0.md`). |
 | 1. Test set: 15 clips (3 per language) labelled in `data/testset.csv` | not started; Aadi |
-| 2. Prosody + scoring core (Mac) | next; needs Aadi's 4 test recordings in `data/clips/step2/` |
+| 2. Prosody + scoring core (Mac) | **done** (see `docs/reports/step2.md`); threshold and weights calibrated in step 6 |
 | 3. Speech branch on the Omen | unblocked (Omen ready) |
 | 4. Visual branch + context + translation | after step 2 |
 | 5. Delivery card + TTS + game loop (MVP) | — |

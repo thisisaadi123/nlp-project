@@ -1,1 +1,1 @@
-clip_id,language,emotion,has_music,num_speakers,register_note,expected_translation_notes
+clip_id,language,source,start,end,emotion,has_music,num_speakers,register_note,transcript,expected_translation_notes,verified

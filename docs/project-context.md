@@ -22,8 +22,23 @@ languages, turned into a social game.
 
 ## Languages
 
-Hindi, Bengali, Marathi, Telugu, Tamil, any pair (20 directions). Build and test Hindi ↔ one other
-first; the code supports all five through `config.yaml`.
+Hindi, Bengali, Marathi, Telugu, Tamil, any pair (20 directions). **Build and test Hindi ↔ Tamil
+first**; the code supports all five through `config.yaml`. The team's Tamil speaker speaks it well
+but does not read Tamil script, so anything a person checks in Tamil also gets a romanized
+version ("anna, enna panra?").
+
+## Data: nobody records anything
+
+The team does not record audio for this project. The only recordings are dubs that players make
+inside the finished app (used for step 6 calibration, with consent). Ground truth comes from:
+
+| Need | Source | Ground truth |
+|---|---|---|
+| Emotion accuracy (Hindi, Tamil) | [Rasa](https://huggingface.co/datasets/ai4bharat/Rasa) (AI4Bharat): actors, 6 emotions + neutral, transcripts. CC BY-ND 4.0: **evaluation only**; do not publish modified copies or release models trained on it. Indic Parler-TTS was partly trained on Rasa, so never use it to judge our TTS. | exact |
+| ASR accuracy (all 5 languages) | Google FLEURS, AI4Bharat Kathbath | exact |
+| Diarization, music separation | generated scenes: Indic Parler-TTS voices alternating lines, music mixed at known levels | exact |
+| Real acting, music, crosstalk, register in context | movie/TV clips (`docs/testset-guide.md`), checked by listening | human-checked |
+| Pipeline smoke tests | Gemini TTS Hindi takes (`scripts/tts_takes.py`), shared via the team Drive folder | intended text/emotion |
 
 ## Machines
 
@@ -50,7 +65,8 @@ first; the code supports all five through `config.yaml`.
    (e.g. `BHAIYA[stress, pitch-spike] ⏸0.6s`); mismatches flagged (possible sarcasm)
 6. IndicTrans2 draft → Groq LLM refines (register, emphasis mapping, fit to original duration).
    If Groq is unavailable or rate-limited, the IndicTrans2 draft is used as is.
-7. Delivery card + Indic Parler-TTS reference dub (style prompt from the emotion vector)
+7. Delivery card + Indic Parler-TTS reference dub (style prompt from the emotion vector).
+   The card offers the line in romanized form too: many people speak a language they can't read.
 8. Cache everything per clip
 
 **B. Game loop — every attempt, target < 5 s**
@@ -98,9 +114,9 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 | Step | State |
 |---|---|
 | 0. Setup | **Mac done** (all checks pass). **Omen done** (all checks pass; see `docs/reports/omen-step0.md`). |
-| 1. Test set: 15 clips (3 per language) labelled in `data/testset.csv` | not started; Aadi |
+| 1. Test set | Ground truth for step 3 comes from datasets (see Data). Movie clips (3 per language, tooling ready) are needed by step 4 for register and real scenes; Aadi. |
 | 2. Prosody + scoring core (Mac) | **done** (see `docs/reports/step2.md`); threshold and weights calibrated in step 6 |
-| 3. Speech branch on the Omen | unblocked (Omen ready) |
+| 3. Speech branch on the Omen | ready to start (Omen) |
 | 4. Visual branch + context + translation | after step 2 |
 | 5. Delivery card + TTS + game loop (MVP) | — |
 | 6. Train + calibrate (Colab) | — |

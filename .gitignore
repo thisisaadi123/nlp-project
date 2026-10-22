@@ -10,6 +10,7 @@ __pycache__/
 data/clips/*
 !data/clips/.gitkeep
 data/cache/
+data/datasets/
 models/
 *.wav
 *.mp4

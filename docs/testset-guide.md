@@ -19,7 +19,6 @@ Across all 15 clips, at least:
 | background music under the dialogue | 3 |
 | two or more speakers talking | 3 |
 | register contrast: bhai vs bhaiya, tu/tum/aap, dada, anna vs machan... | 2 |
-| self-recorded (you act it out) | 1 per language |
 
 One clip can cover several rows (an angry two-person argument with music counts three times).
 `python scripts/testset_status.py` shows what is covered and what is missing.
@@ -27,9 +26,9 @@ One clip can cover several rows (an angry two-person argument with music counts 
 **Good clips:** clear dialogue, one main emotion, a relationship you can tell from the scene.
 **Avoid:** heavy crosstalk, very loud music over the words, songs, clips over 45 s.
 
-**Self-recorded clips are the most valuable**: you know the exact words and the intended
-emotion, so they are true ground truth. Act out a short scene with a friend, ideally one with
-a register contrast (younger sibling scolding an elder one, two friends joking).
+Nobody on the team records anything. Movie and TV clips give realism (real acting, music,
+crosstalk, register in context); exact ground truth for emotion and ASR comes from datasets
+and generated test scenes on the Omen (step 3).
 
 ## Setup (once)
 
@@ -49,9 +48,6 @@ python scripts/add_clip.py "https://www.youtube.com/watch?v=..." --lang hi --sta
 
 # a file on your computer
 python scripts/add_clip.py ~/Downloads/movie.mp4 --lang ta --start 12:05 --end 12:20
-
-# your own phone recording
-python scripts/add_clip.py ~/Desktop/scene.m4a --lang bn --self
 ```
 
 The clip is saved as `data/clips/<lang>_<nn>.mp4` and a row is added to `data/testset.csv`.

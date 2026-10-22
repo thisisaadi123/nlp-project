@@ -3,7 +3,7 @@
     python scripts/tts_takes.py          # writes data/clips/step2/tts/<voice>_<take>.wav
 
 Synthetic acting is weaker than a real actor, so this is a smoke test for Indic speech,
-not an accuracy measurement. Real recordings replace it when available.
+not an accuracy measurement. Real emotional Indic speech for evaluation comes from datasets (step 3).
 
 TTS models sometimes read the style instruction aloud ("Say angrily, भैया..."), which
 silently ruins the take. Every take is transcribed with Groq Whisper and regenerated if

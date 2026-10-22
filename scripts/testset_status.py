@@ -33,12 +33,11 @@ def main() -> None:
     done = [r for r in rows if r.get("verified") == "yes"]
     print(f"{len(rows)} clips, {len(done)} verified\n")
 
-    print("Per language (need 3 each, at least 1 self-recorded):")
+    print("Per language (need 3 each):")
     for lang in LANGUAGES:
         all_l = [r for r in rows if r["language"] == lang]
         ver_l = [r for r in done if r["language"] == lang]
-        own = sum(r["source"] == "self" for r in ver_l)
-        print(f"  {lang}: {mark(len(ver_l), len(all_l), PER_LANGUAGE)}   self-recorded {'✅' if own else '⬜'} {own}")
+        print(f"  {lang}: {mark(len(ver_l), len(all_l), PER_LANGUAGE)}")
 
     print("\nCoverage across all languages:")
     for label, need, test in REQUIREMENTS:

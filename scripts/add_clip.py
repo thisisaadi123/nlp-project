@@ -3,9 +3,8 @@
     # from YouTube (only the requested section is downloaded)
     python scripts/add_clip.py "https://www.youtube.com/watch?v=..." --lang hi --start 1:02:15 --end 1:02:31
 
-    # from a file on disk (a movie file, or a phone recording; use --self for your own recordings)
+    # from a file on disk
     python scripts/add_clip.py ~/Downloads/scene.mp4 --lang ta --start 0:05 --end 0:22
-    python scripts/add_clip.py ~/Desktop/recording.m4a --lang hi --self
 
 Then run scripts/prelabel_clip.py <clip_id> to draft its labels.
 """
@@ -55,7 +54,6 @@ def main() -> None:
     ap.add_argument("--lang", required=True, choices=LANGUAGES)
     ap.add_argument("--start", help="clip start (seconds, mm:ss or hh:mm:ss); default: beginning")
     ap.add_argument("--end", help="clip end; default: end of file")
-    ap.add_argument("--self", action="store_true", help="your own recording (most reliable ground truth)")
     args = ap.parse_args()
 
     max_seconds = config()["clip"]["max_seconds"]
@@ -97,7 +95,7 @@ def main() -> None:
         cmd += ["-c:a", "aac", "-b:a", "128k", "-ac", "1", "-movflags", "+faststart", str(out)]
         subprocess.run(cmd, check=True)
 
-    source = "self" if args.self else (args.source if is_url else f"file:{Path(args.source).name}")
+    source = args.source if is_url else f"file:{Path(args.source).name}"
     rows.append({"clip_id": clip_id, "language": args.lang, "source": source,
                  "start": f"{start:.1f}", "end": f"{start + length:.1f}", "verified": "no"})
     write_rows(rows)

@@ -1,0 +1,45 @@
+# Dub-Dub-Goose configuration.
+# Model names live here so swapping one is a one-line change.
+
+languages:
+  # key: ISO 639-1, used everywhere in our code
+  hi: { name: Hindi,   script: Devanagari, indictrans: hin_Deva }
+  bn: { name: Bengali, script: Bengali,    indictrans: ben_Beng }
+  mr: { name: Marathi, script: Devanagari, indictrans: mar_Deva }
+  te: { name: Telugu,  script: Telugu,     indictrans: tel_Telu }
+  ta: { name: Tamil,   script: Tamil,      indictrans: tam_Taml }
+
+clip:
+  max_seconds: 45
+  sample_rate: 16000
+  keyframe_fps: 1.5          # plus extra frames at scene changes
+
+models:
+  separation: htdemucs
+  diarization: pyannote/speaker-diarization-3.1
+  asr: ai4bharat/indic-conformer-600m-multilingual
+  emotion: emotion2vec/emotion2vec_plus_large
+  translation_draft: ai4bharat/indictrans2-indic-indic-dist-320M
+  tts: ai4bharat/indic-parler-tts
+
+llm:
+  provider: groq
+  # Groq's model list changes; run scripts/check_setup.py to see what is live.
+  text_model: llama-3.3-70b-versatile
+  vision_model: meta-llama/llama-4-scout-17b-16e-instruct
+  temperature: 0.3
+  fallback_provider: gemini
+
+# Models kept in VRAM for the live game loop; everything else is loaded on demand.
+vram:
+  resident: [asr, emotion]
+  on_demand: [separation, diarization, translation_draft, tts]
+
+scoring:
+  weights:            # must sum to 100
+    content: 20
+    emotion: 25
+    emphasis: 15
+    contour: 20
+    timing: 20
+  dub_threshold: 70   # score >= this earns a Dub, below is a Goose

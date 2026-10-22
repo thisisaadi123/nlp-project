@@ -1,0 +1,13 @@
+# Heavy stack for the Omen (WSL2 + CUDA). Installed in step 3, not step 0.
+# Versions get pinned once each model is confirmed working.
+-r requirements-mac.txt
+torch
+torchaudio
+transformers
+sentencepiece
+demucs
+pyannote.audio
+nemo_toolkit[asr]
+funasr                 # emotion2vec
+IndicTransToolkit
+git+https://github.com/huggingface/parler-tts.git

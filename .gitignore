@@ -1,0 +1,25 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# data and model files (too large / not ours to redistribute)
+data/clips/*
+!data/clips/.gitkeep
+data/cache/
+models/
+*.wav
+*.mp4
+*.mkv
+*.mp3
+*.ckpt
+*.nemo
+*.onnx
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/

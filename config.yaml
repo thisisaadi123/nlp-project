@@ -25,10 +25,14 @@ models:
 llm:
   provider: groq
   # Groq's model list changes; run scripts/check_setup.py to see what is live.
-  text_model: llama-3.3-70b-versatile
-  vision_model: meta-llama/llama-4-scout-17b-16e-instruct
+  # gpt-oss-120b kept bhai/bhaiya register apart in Tamil; qwen3.8 collapsed both to "bro",
+  # so qwen is used only for image captioning.
+  text_model: openai/gpt-oss-120b
+  vision_model: qwen/qwen3.8-27b
+  vision_max_tokens: 800     # qwen's free tier has a low output-tokens-per-minute cap
   temperature: 0.3
   fallback_provider: gemini
+  fallback_model: gemini-flash-latest
 
 # Models kept in VRAM for the live game loop; everything else is loaded on demand.
 vram:

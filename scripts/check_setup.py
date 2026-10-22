@@ -80,9 +80,13 @@ def check_groq() -> None:
         reply = client.chat.completions.create(
             model=llm["text_model"],
             messages=[{"role": "user", "content": "Translate 'bhaiya' into Tamil. Reply with one word."}],
-            max_tokens=10,
+            max_tokens=300,  # reasoning models spend output tokens thinking before answering
         )
-        report("PASS", "Groq test call", reply.choices[0].message.content.strip())
+        answer = (reply.choices[0].message.content or "").strip()
+        if answer:
+            report("PASS", "Groq test call", answer)
+        else:
+            report("WARN", "Groq test call", "empty reply; the model used its whole token budget reasoning")
 
     print("        Live Groq models:", ", ".join(live))
 

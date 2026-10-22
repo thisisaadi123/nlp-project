@@ -20,10 +20,10 @@ The Omen (RTX 4060, 8 GB) runs the backend and all GPU models inside WSL2 Ubuntu
 ```bash
 nvidia-smi                       # must list the RTX 4060
 sudo apt update && sudo apt install -y git
-gh auth login || true            # or use an HTTPS token / SSH key for GitHub
+# repo is public, so no GitHub login is needed to clone
 cd ~
-git clone https://github.com/<owner>/dub-dub-goose.git
-cd dub-dub-goose
+git clone https://github.com/thisisaadi123/nlp-project.git
+cd nlp-project
 bash scripts/setup_omen.sh
 ```
 

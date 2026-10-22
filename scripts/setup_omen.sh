@@ -10,7 +10,7 @@ if ! grep -qi microsoft /proc/version; then
 fi
 
 case "$(pwd)" in
-  /mnt/*) echo "Clone the repo inside WSL (e.g. ~/dub-dub-goose), not under /mnt/c — file access there is very slow." >&2; exit 1 ;;
+  /mnt/*) echo "Clone the repo inside WSL (e.g. ~/nlp-project), not under /mnt/c — file access there is very slow." >&2; exit 1 ;;
 esac
 
 echo "==> Checking GPU passthrough"

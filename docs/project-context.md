@@ -30,7 +30,7 @@ first; the code supports all five through `config.yaml`.
 | Machine | Role |
 |---|---|
 | Mac (Aadi) | development, prosody + scoring code, API-only stages |
-| Omen laptop, RTX 4060 8 GB, Windows + **WSL2 Ubuntu 22.04** | runs the backend and all GPU models |
+| Omen laptop, RTX 4060 8 GB, Windows + **WSL2 Ubuntu** (22.04 or 24.04) | runs the backend and all GPU models |
 | Google Colab Pro | fine-tuning speech emotion, score calibration |
 | Groq free API | captioning, scene context, translation refinement, insights |
 | Gemini free API | backup LLM |
@@ -92,10 +92,10 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 
 | Step | State |
 |---|---|
-| 0. Setup | **Mac done** (all checks pass). **Omen pending.** |
-| 1. Test set: 15 clips (3 per language) labelled in `data/testset.csv` | not started |
+| 0. Setup | **Mac done** (all checks pass). **Omen done** (all checks pass; see `docs/reports/omen-step0.md`). |
+| 1. Test set: 15 clips (3 per language) labelled in `data/testset.csv` | not started; Aadi |
 | 2. Prosody + scoring core (Mac) | next; needs Aadi's 4 test recordings in `data/clips/step2/` |
-| 3. Speech branch on the Omen | after Omen setup |
+| 3. Speech branch on the Omen | unblocked (Omen ready) |
 | 4. Visual branch + context + translation | after step 2 |
 | 5. Delivery card + TTS + game loop (MVP) | — |
 | 6. Train + calibrate (Colab) | — |

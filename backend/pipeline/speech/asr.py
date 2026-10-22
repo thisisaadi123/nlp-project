@@ -70,7 +70,7 @@ class ASR:
         enc, enc_len = self.encoder.run(["outputs", "encoded_lengths"],
                                         {"audio_signal": feats.cpu().numpy(), "length": n.cpu().numpy()})
         lp = self.ctc.run(["logprobs"], {"encoder_output": enc})[0][0, : int(enc_len[0])]
-        lp = lp[:, self._mask_idx[lang]]
+        lp = np.ascontiguousarray(lp[:, self._mask_idx[lang]])
         return lp - np.logaddexp.reduce(lp, axis=-1, keepdims=True)    # log_softmax
 
     def transcribe(self, y: np.ndarray, lang: str) -> Transcript:

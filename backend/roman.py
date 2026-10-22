@@ -66,7 +66,7 @@ def _tamil_word(w: str) -> str:
             base = _TA_CONS[c]
         vowel = "" if sign == _PULLI else _TA_SIGNS.get(sign, "a")
         out.append(base + vowel)
-    if units and units[-1][1] == _PULLI and units[-1][0] in _TA_DOUBLED and len(units) > 1:
+    if units and units[-1][1] == _PULLI and units[-1][0] in "கசதப" and len(units) > 1:
         out[-1] = ""                                        # sandhi doubling before the next word: ஆகிக் -> aagi
     s = "".join(out)
     return s[:-2] + "a" if s.endswith("aa") and len(s) > 3 else s     # அண்ணா -> anna

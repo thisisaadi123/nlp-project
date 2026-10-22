@@ -18,3 +18,4 @@ IndicTransToolkit==1.1.1
 parler-tts @ git+https://github.com/huggingface/parler-tts.git@d108732cd57788ec86bc857d99a6cabd66663d68
 indic-transliteration==2.3.82   # text_roman
 jiwer==4.0.0                    # WER
+pyarrow==26.0.0                 # Rasa parquet files

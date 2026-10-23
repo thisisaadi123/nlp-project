@@ -13,7 +13,7 @@ CLIPS = ROOT / "data/clips"
 LABELS = ROOT / "data/labels"
 
 COLUMNS = ["clip_id", "language", "source", "start", "end", "emotion", "has_music", "num_speakers",
-           "register_note", "transcript", "expected_translation_notes", "verified"]
+           "register_note", "transcript", "expected_translation_notes", "verified", "title"]
 LANGUAGES = ["hi", "bn", "mr", "te", "ta"]
 EMOTIONS = ["angry", "sad", "happy", "fearful", "surprised", "disgust", "neutral", "calm", "sarcastic", "comic"]
 

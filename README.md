@@ -35,6 +35,17 @@ python scripts/dub_clip.py data/clips/ta_02.mp4 --stub --to hi          # step 4
 python scripts/eval_register.py       # step 4: register benchmark (24 cases)
 ```
 
+## Playing the game locally
+
+```bash
+python scripts/build_library.py                 # step 4 output -> data/library/ (clips, cards, references)
+cd frontend && npm install && npm run build      # the website -> frontend/dist
+cd .. && uvicorn backend.api.app:app --port 8000 # open http://localhost:8000
+```
+
+While working on the website, run `npm run dev` in `frontend/` instead of building (it serves on
+http://localhost:5173 and forwards /api to the server on :8000).
+
 ## Layout
 
 ```
@@ -42,7 +53,7 @@ backend/pipeline/   speech, visual, context, translate, tts stages
 backend/scoring/    prosody comparison and the Dub/Goose score
 backend/llm/        Groq client, prompts, cache, fallbacks
 backend/api/        FastAPI app
-frontend/           web app
+frontend/           the game website (React + Vite); backend/game/ is its game logic
 notebooks/          Colab notebooks
 data/testset.csv    labels for the test clips in data/clips/ (clips are not committed)
 config.yaml         languages, model names, score weights, thresholds

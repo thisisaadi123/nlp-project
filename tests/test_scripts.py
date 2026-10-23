@@ -49,3 +49,20 @@ def test_whole_word_terms_do_not_match_inside_other_words():
 def test_forbidden_whole_word_reported_without_marker():
     ok, why = check("அண்ணா, நீ வா", {"expect": [], "forbid": ["=நீ"]})
     assert not ok and why == "contains நீ"
+
+
+def test_cut_clip_starts_at_zero(tmp_path):
+    """YouTube sections keep their original timestamps; a cut clip must start at 0 or the
+    website's video clock is off by seconds (found when the booth auto-stopped instantly)."""
+    import subprocess
+    from pathlib import Path
+    from scripts.add_clip import cut
+    src = tmp_path / "offset.mp4"
+    subprocess.run(["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=320x180:d=6",
+                    "-f", "lavfi", "-i", "sine=f=300:d=6", "-c:v", "libx264", "-c:a", "aac",
+                    "-output_ts_offset", "3.6", str(src)], check=True)
+    out = tmp_path / "cut.mp4"
+    cut(Path(src), 1.0, 4.0, out)
+    starts = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=start_time", "-of", "csv=p=0", str(out)],
+                            capture_output=True, text=True).stdout.split()
+    assert all(float(s) < 0.2 for s in starts)

@@ -97,11 +97,14 @@ def emphasis(ref: Prosody, att: Prosody, target_span: tuple[float, float] | None
 
 def score(ref: Prosody, att: Prosody,
           ref_baseline: Baseline | None = None, att_baseline: Baseline | None = None,
-          target_span: tuple[float, float] | None = None, arousal_model: dict | None = None) -> Result:
+          target_span: tuple[float, float] | None = None, arousal_model: dict | None = None,
+          content: float | None = None) -> Result:
     """Score `att` (the dub) against `ref` (the original line).
 
     Baselines are each speaker's neutral voice (see arousal.baseline): for the player, their
     calibration line; for the original, the same speaker's other lines in the clip.
+    `content` (0..1) is how closely the player's words match the translated line; it needs ASR,
+    so callers without it leave it out and the other weights are rescaled.
     """
     cfg = config()["scoring"]
     ref_ar = arousal(ref, ref_baseline, arousal_model)
@@ -112,6 +115,8 @@ def score(ref: Prosody, att: Prosody,
         "timing": timing(ref, att),
         "emphasis": emphasis(ref, att, target_span),
     }
+    if content is not None:
+        components["content"] = float(min(max(content, 0.0), 1.0))
     weights = {k: cfg["weights"][k] for k in components}
     total = 100 * sum(weights[k] * components[k] for k in weights) / sum(weights.values())
     ref_pos, ref_strength = _stress(ref)

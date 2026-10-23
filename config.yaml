@@ -65,3 +65,16 @@ scoring:
     contour: 20
     timing: 20
   dub_threshold: 70   # score >= this earns a Dub, below is a Goose
+
+game:
+  library_dir: data/library
+  # "prosody": CPU only, no models (pitch, loudness, timing, stress, prosody arousal).
+  # "full": adds step 3's ASR (content score, word timings) and emotion2vec (needs the GPU stack).
+  analyzer: prosody
+  # Read once, calmly, before playing: gives the player's voice a neutral baseline.
+  calibration:
+    hi: "आज मौसम काफ़ी अच्छा है, और मैं शाम को बाज़ार जाऊँगा।"
+    ta: "இன்று வானிலை நன்றாக இருக்கிறது, நான் மாலையில் கடைக்குப் போவேன்."
+    bn: "আজ আবহাওয়া বেশ ভালো, আমি সন্ধ্যায় বাজারে যাব।"
+    mr: "आज हवा छान आहे, मी संध्याकाळी बाजारात जाईन."
+    te: "ఈ రోజు వాతావరణం బాగుంది, నేను సాయంత్రం బజారుకి వెళ్తాను."

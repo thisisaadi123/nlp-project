@@ -34,6 +34,26 @@ def has_video(path: Path) -> bool:
     return bool(out.strip())
 
 
+def cut(src: Path, seek: float, end: float, out: Path) -> None:
+    """Cut [seek, end] of `src` into a 720p-max .mp4 whose timestamps start at 0.
+
+    Sections downloaded from YouTube keep their original timestamps (a clip could start at
+    3.6 s); browsers count video time from that, while ffmpeg counts audio from its first
+    sample, so the website's clock would be off by seconds. make_zero shifts the earliest
+    timestamp to 0 and keeps audio and video in sync with each other.
+    """
+    cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-ss", f"{seek:.3f}", "-to", f"{end:.3f}", "-i", str(src)]
+    if has_video(src):
+        cmd += ["-vf", "scale=-2:'min(720,ih)'", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast"]
+    else:  # audio-only recording: add a black frame track so every clip is an .mp4 video
+        cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=640x360",
+               "-ss", f"{seek:.3f}", "-to", f"{end:.3f}", "-i", str(src), "-map", "0:v", "-map", "1:a",
+               "-shortest", "-c:v", "libx264", "-tune", "stillimage", "-crf", "30"]
+    cmd += ["-c:a", "aac", "-b:a", "128k", "-ac", "1", "-avoid_negative_ts", "make_zero",
+            "-movflags", "+faststart", str(out)]
+    subprocess.run(cmd, check=True)
+
+
 def download_section(url: str, start: float, end: float, workdir: Path) -> Path:
     """Download only [start, end] of a video, at most 720p."""
     pad = 2.0  # keyframes: grab a little extra, trim exactly afterwards
@@ -84,16 +104,7 @@ def main() -> None:
         if not MIN_SECONDS <= length <= max_seconds:
             sys.exit(f"clip is {length:.1f} s; keep it between {MIN_SECONDS} and {max_seconds} s")
 
-        cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-ss", f"{seek:.3f}", "-to", f"{end:.3f}",
-               "-i", str(src)]
-        if has_video(src):
-            cmd += ["-vf", "scale=-2:'min(720,ih)'", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast"]
-        else:  # audio-only recording: add a black frame track so every clip is an .mp4 video
-            cmd = ["ffmpeg", "-nostdin", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=640x360",
-                   "-ss", f"{seek:.3f}", "-to", f"{end:.3f}", "-i", str(src), "-map", "0:v", "-map", "1:a",
-                   "-shortest", "-c:v", "libx264", "-tune", "stillimage", "-crf", "30"]
-        cmd += ["-c:a", "aac", "-b:a", "128k", "-ac", "1", "-movflags", "+faststart", str(out)]
-        subprocess.run(cmd, check=True)
+        cut(src, seek, end, out)
 
     source = args.source if is_url else f"file:{Path(args.source).name}"
     rows.append({"clip_id": clip_id, "language": args.lang, "source": source,

@@ -1,0 +1,5 @@
+# uv overrides for requirements-gpu.txt:
+#   uv pip install -r requirements-gpu.txt --override overrides-gpu.txt
+# descript-audiotools (via parler-tts) declares protobuf < 5, but pyannote.audio 4 needs >= 5.
+# Parler-TTS generation works with protobuf 7 (tested in step 3).
+protobuf==7.36.2

@@ -1,13 +1,21 @@
-# Heavy stack for the Omen (WSL2 + CUDA). Installed in step 3, not step 0.
-# Versions get pinned once each model is confirmed working.
+# Heavy stack for the Omen (WSL2 + CUDA). Pinned to the versions confirmed working in step 3
+# (torch cu130 wheels from PyPI, RTX 4060, driver 592.82). See docs/reports/step3.md.
+# Install with the protobuf override:
+#   uv pip install -r requirements-gpu.txt --override overrides-gpu.txt
 -r requirements-mac.txt
-torch
-torchaudio
-transformers
-sentencepiece
-demucs
-pyannote.audio
-nemo_toolkit[asr]
-funasr                 # emotion2vec
-IndicTransToolkit
-git+https://github.com/huggingface/parler-tts.git
+torch==2.14.1
+torchaudio==2.11.0              # forced_align for CTC word timings
+torchcodec==0.17.0              # audio decoding for pyannote.audio 4
+transformers==4.46.1            # parler-tts pins exactly this; IndicTransToolkit needs < 5
+tokenizers==0.20.3
+huggingface-hub==0.36.2
+sentencepiece==0.2.2
+onnxruntime-gpu==1.31.0         # IndicConformer ships as ONNX (no NeMo needed)
+demucs==4.1.0
+pyannote.audio==4.0.7
+funasr==1.4.16                  # emotion2vec
+IndicTransToolkit==1.1.1
+parler-tts @ git+https://github.com/huggingface/parler-tts.git@d108732cd57788ec86bc857d99a6cabd66663d68
+indic-transliteration==2.3.82   # text_roman
+jiwer==4.0.0                    # WER
+pyarrow==26.0.0                 # Rasa parquet files

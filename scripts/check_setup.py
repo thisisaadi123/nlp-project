@@ -15,6 +15,7 @@ from backend.settings import config, secret  # noqa: E402
 GATED_MODELS = [
     "pyannote/speaker-diarization-3.1",
     "pyannote/segmentation-3.0",
+    "pyannote/speaker-diarization-community-1",  # pyannote.audio 4 loads its PLDA even for 3.1
     "ai4bharat/indic-conformer-600m-multilingual",
     "ai4bharat/indictrans2-indic-indic-dist-320M",
     "ai4bharat/indic-parler-tts",

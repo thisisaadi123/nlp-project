@@ -14,10 +14,22 @@ clip:
   sample_rate: 16000
   keyframe_fps: 1.5          # plus extra frames at scene changes
 
+speech:
+  # Demucs helps when music is present (WER 45->39% at 0 dB, DER 17->12% at -5 dB) but slightly
+  # hurts clean speech (WER 16->18%). "auto": run it, keep its vocals only if it removed music
+  # at least this loud relative to the speech (docs/reports/step3.md).
+  demucs: auto               # auto | on | off
+  demucs_min_music_db: -20
+
 models:
   separation: htdemucs
   diarization: pyannote/speaker-diarization-3.1
   asr: ai4bharat/indic-conformer-600m-multilingual
+  # word timings: character-level wav2vec2 CTC (Vakyansh, MIT); languages not listed fall back
+  # to IndicConformer's own CTC timings (~200 ms, see docs/reports/step3.md)
+  aligner:
+    hi: Harveenchadha/vakyansh-wav2vec2-hindi-him-4200
+    ta: Harveenchadha/vakyansh-wav2vec2-tamil-tam-250
   emotion: emotion2vec/emotion2vec_plus_large
   translation_draft: ai4bharat/indictrans2-indic-indic-dist-320M
   tts: ai4bharat/indic-parler-tts
@@ -42,7 +54,7 @@ llm:
 
 # Models kept in VRAM for the live game loop; everything else is loaded on demand.
 vram:
-  resident: [asr, emotion]
+  resident: [asr, emotion, aligner]
   on_demand: [separation, diarization, translation_draft, tts]
 
 scoring:

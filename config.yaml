@@ -18,6 +18,11 @@ models:
   separation: htdemucs
   diarization: pyannote/speaker-diarization-3.1
   asr: ai4bharat/indic-conformer-600m-multilingual
+  # word timings: character-level wav2vec2 CTC (Vakyansh, MIT); languages not listed fall back
+  # to IndicConformer's own CTC timings (~200 ms, see docs/reports/step3.md)
+  aligner:
+    hi: Harveenchadha/vakyansh-wav2vec2-hindi-him-4200
+    ta: Harveenchadha/vakyansh-wav2vec2-tamil-tam-250
   emotion: emotion2vec/emotion2vec_plus_large
   translation_draft: ai4bharat/indictrans2-indic-indic-dist-320M
   tts: ai4bharat/indic-parler-tts

@@ -20,3 +20,8 @@ def config() -> dict:
 def secret(name: str) -> str | None:
     value = os.getenv(name, "").strip()
     return value or None
+
+
+def secrets(name: str) -> list[str]:
+    """NAME, then backups NAME_2 ... NAME_5 (e.g. teammates' keys), in that order, skipping unset ones."""
+    return [v for v in [secret(name)] + [secret(f"{name}_{i}") for i in range(2, 6)] if v]

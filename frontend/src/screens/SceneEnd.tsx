@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Goose } from "../components/Goose";
 import { Stars } from "../components/Script";
 import { api, type Entry } from "../lib/api";
-import { progress, stars } from "../lib/progress";
+import { DUB_AT, progress, stars } from "../lib/progress";
 import type { Take } from "./Booth";
 
 /** End of a scene: the scene score, each line's best, and the premiere of the player's dub. */
@@ -15,7 +15,7 @@ export function SceneEnd({ entry, takes, onRetry, onHome, onScenes }: {
   const bests = lines.map((l) => takes[l.line_id]?.score ?? progress.best(entry.id, l.line_id));
   const scored = bests.filter((b): b is number => b !== null);
   const avg = scored.length ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length) : 0;
-  const dub = avg >= 70;
+  const dub = avg >= DUB_AT;
   const [premiere, setPremiere] = useState<{ state: "idle" | "mixing" | "ready" | "error"; url?: string; error?: string }>({ state: "idle" });
   const [titleCard, setTitleCard] = useState(false);
 

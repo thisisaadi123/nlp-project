@@ -46,8 +46,8 @@ Watch and listen to the whole clip, then answer in JSON with exactly these field
 Times are in seconds from the start of the clip. If you cannot make out a word, write [?] rather than guessing."""
 
 
-def call_gemini(video: bytes, prompt: str) -> dict:
-    model = config()["llm"]["fallback_model"]
+def call_gemini(video: bytes, prompt: str, model: str | None = None) -> dict:
+    model = model or config()["llm"]["fallback_model"]
     body = {
         "contents": [{"parts": [{"inline_data": {"mime_type": "video/mp4", "data": base64.b64encode(video).decode()}},
                                 {"text": prompt}]}],
@@ -62,7 +62,7 @@ def call_gemini(video: bytes, prompt: str) -> dict:
             continue
         if r.status_code == 429:
             if "PerDay" in r.text:
-                sys.exit("Gemini free daily quota used up; try again tomorrow")
+                sys.exit(f"Gemini free daily quota for {model} used up; try again tomorrow")
             time.sleep(20 * (attempt + 1))
             continue
         r.raise_for_status()

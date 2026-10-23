@@ -85,6 +85,7 @@ export function MicCheck({ lang, onDone }: { lang: Lang; onDone: (b: Baseline | 
       {step === "ask" ? (
         <>
           <p className="max-w-md text-lg">We need your microphone to hear your dub.</p>
+          <p className="max-w-md text-sm text-dim">Each take is scored on our server, and its words are checked by Sarvam's speech recognition. We don't keep your recordings.</p>
           <button type="button" onClick={allow}
             className="flex items-center gap-2 rounded-lg bg-gold px-8 py-3.5 font-marquee text-lg text-ink shadow-[0_6px_0_#a86c00] active:translate-y-1 active:shadow-[0_3px_0_#a86c00]">
             <Mic className="h-5 w-5" /> ALLOW MIC

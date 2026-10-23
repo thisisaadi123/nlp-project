@@ -81,6 +81,12 @@ The ranking is right in every row. The female "angry 2" take came out much calme
 
 - **Dub threshold:** at 70, only 51% of same-speaker true matches pass. Fit the threshold and the
   component weights on human-rated dubs.
+  *Update (October 2026):* across speakers it was worse: at raw 70 only 12% of correct attempts
+  (different RAVDESS actors, same sentence and emotion) earned a Dub. Players now see the score
+  through a display curve that moved the Dub line to raw 55 (49% of correct attempts, 29% of
+  wrong-emotion ones). That curve was later replaced by the game's own score
+  (`backend/scoring/director.py`: timing, volume, punch, tone and words, each checked against the
+  line's note); this research score stays for the RAVDESS evaluations.
 - **Emotion slot:** combine emotion2vec (which emotion) with arousal (how intense) once step 3
   measures emotion2vec on Indic speech.
 - **Arousal model on Indic speech:** trained on English actors; it rated Hindi TTS anger as milder

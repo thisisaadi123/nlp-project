@@ -8,9 +8,11 @@ from pathlib import Path
 
 from backend.pipeline.context.build import build_context
 from backend.pipeline.context.fusion import fuse
+from backend.pipeline.translate import sarvam
 from backend.pipeline.translate.draft import translator
 from backend.pipeline.translate.refine import refine, syllables
 from backend.pipeline.visual.caption import caption_clip
+from backend.settings import config
 
 
 def translation_input(line: dict, fused: dict, ctx_line: dict) -> dict:
@@ -24,15 +26,20 @@ def translation_input(line: dict, fused: dict, ctx_line: dict) -> dict:
     return item
 
 
-def process_clip(clip: str | None, lines: list[dict], src: str, tgt: str) -> dict:
-    captions = caption_clip(clip) if clip else None
+def process_clip(clip: str | None, lines: list[dict], src: str, tgt: str, captions: dict | None = None,
+                 drafts: list[str] | None = None) -> dict:
+    """`captions` and `drafts` from an earlier run can be passed in to skip the vision model and
+    IndicTrans2 (scripts/retranslate.py does this to redo only the context and translation)."""
+    if captions is None and clip:
+        captions = caption_clip(clip)
     context = build_context(lines, captions, src)
     ctx_lines = {c.get("line_id"): c for c in context.get("lines", []) if isinstance(c, dict)}
     scene = {k: context[k] for k in ("setting", "summary", "mood", "speakers", "relationships") if context.get(k)}
 
     fused = [fuse(ln, ctx_lines.get(ln["line_id"])) for ln in lines]
     inputs = [translation_input(ln, f, ctx_lines.get(ln["line_id"], {})) for ln, f in zip(lines, fused)]
-    drafts = translator().translate([ln["text"] for ln in lines], src, tgt)
+    if drafts is None:
+        drafts = make_drafts(lines, src, tgt, context.get("speakers"))
     translated = refine(inputs, drafts, src, tgt, scene)
 
     out_lines = []
@@ -42,6 +49,21 @@ def process_clip(clip: str | None, lines: list[dict], src: str, tgt: str) -> dic
             "syllables_source": syllables(ln["text"]), "syllables_target": syllables(t["translation"])}})
     return {"source_language": src, "target_language": tgt, "captions": captions, "context": context,
             "lines": out_lines}
+
+
+def draft_engine() -> str:
+    """llm.draft_engine: "sarvam" (spoken-style, needs SARVAM_API_KEY) or "indictrans2"."""
+    return "sarvam" if config()["llm"].get("draft_engine") == "sarvam" and sarvam.available() else "indictrans2"
+
+
+def make_drafts(lines: list[dict], src: str, tgt: str, people: dict | None = None) -> list[str]:
+    if draft_engine() == "sarvam":
+        out = sarvam.drafts(lines, src, tgt, people)
+        if all(out):
+            return out
+        backup = translator().translate([ln["text"] for ln in lines], src, tgt)   # only for the gaps
+        return [d or b for d, b in zip(out, backup)]
+    return translator().translate([ln["text"] for ln in lines], src, tgt)
 
 
 def lines_from_label(label_path: Path, language: str) -> list[dict]:

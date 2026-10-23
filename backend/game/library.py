@@ -15,6 +15,7 @@ language and words, same emotion, intensity, timing and stress placement.
 """
 import json
 import pickle
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -23,7 +24,6 @@ from pathlib import Path
 
 import soundfile as sf
 
-from backend.game.coach import coach
 from backend.game.shape import shape
 from backend.scoring.arousal import Baseline, baseline
 from backend.scoring.prosody import SR, Prosody, extract, load_audio
@@ -40,8 +40,14 @@ def short(description: str | None) -> str | None:
     """'younger brother, 19, furious at ...' -> 'younger brother' (for one-line labels)."""
     if not description:
         return None
-    first = description.split(",")[0].split(";")[0].split("(")[0].strip()
-    return first[:40]
+    first = description.split(",")[0].split(";")[0].split("(")[0].split(" – ")[0].strip()
+    # scene notes hedge ("Likely a young man", "Possibly the host"); a name label shouldn't
+    first = re.sub(r"^(?:(?:likely|possibly|probably|perhaps|maybe|apparently|seems to be|appears to be)\s+)+"
+                   r"(?:(?:an?|the)\s+)?", "", first, flags=re.I)
+    first = re.sub(r"^(?:an?|the)\s+", "", first, flags=re.I)
+    if re.match(r"same as\b", first, flags=re.I):      # "Same as S1": a duplicate, not a name
+        return None
+    return first[:40] or None
 
 
 def card(line: dict, names: dict[str, str] | None = None) -> dict:
@@ -101,6 +107,25 @@ def thumbnail(clip_path: Path, at: float, out: Path) -> None:
                     "-frames:v", "1", "-vf", "scale=640:-2", "-q:v", "4", str(out)], check=True)
 
 
+def add_voices(cards: list[dict], dub: dict, speakers: dict, out: Path) -> None:
+    """lines/<id>.voice.wav: the dubbed line read aloud in the target language (see voice.py)."""
+    from backend.game import voice
+    if not voice.available():
+        return
+    order = list(dict.fromkeys(c["speaker"] for c in cards))
+    voices = voice.cast(speakers, order)
+    for c in cards:
+        if not c["playable"]:
+            continue
+        try:
+            wav = voice.speak(c["translation"], dub["target_language"], voices[c["speaker"]],
+                              (c.get("shape") or {}).get("duration"))
+        except voice.VoiceError:
+            continue                          # the game works without it; the button just won't show
+        (out / "lines" / f"{c['line_id']}.voice.wav").write_bytes(wav)
+        c["voice"] = True
+
+
 def build_entry(dub_json: Path, clip_path: Path, out_root: Path | None = None, title: str | None = None) -> Path:
     """Build one library entry from step 4's output and the clip it came from."""
     dub = json.loads(dub_json.read_text(encoding="utf-8"))
@@ -132,11 +157,12 @@ def build_entry(dub_json: Path, clip_path: Path, out_root: Path | None = None, t
         c = card(line, names)
         c["start"], c["end"] = round(line["start"] + shift, 3), round(line["end"] + shift, 3)  # video clock
         c["playable"] = p is not None
-        c["coach"] = coach(c)
         # where the voice starts, relative to the line's start (the melody line's time 0)
         c["onset"] = round((a - line["start"]) + p.start, 2) if p else 0.0
         c["shape"] = shape(p, c["translation"].split(), c["stress"]) if p else None
         cards.append(c)
+
+    add_voices(cards, dub, speakers, out)
 
     # Each speaker's baseline: their own lines in this clip (as in step 3), when there are 2+.
     baselines: dict[str, Baseline] = {}
@@ -227,6 +253,12 @@ class Library:
         path = self._dir(entry_id) / "lines" / f"{int(line_id)}.wav"
         if not path.exists():
             raise KeyError(f"no line {line_id} in {entry_id}")
+        return path
+
+    def voice_audio(self, entry_id: str, line_id: int) -> Path:
+        path = self._dir(entry_id) / "lines" / f"{int(line_id)}.voice.wav"
+        if not path.exists():
+            raise KeyError(f"no voice for line {line_id} in {entry_id}")
         return path
 
     def reference(self, entry_id: str, line_id: int) -> Reference:

@@ -109,6 +109,32 @@ Arousal, high (angry/happy/fear/surprise) vs low (sad/neutral), 360 utterances p
 
 Predictions: `data/cache/emotion_rasa.json`; embeddings: `data/cache/emotion_rasa_{hi,ta}.npz`.
 
+### Emotion head on emotion2vec embeddings (Colab, October 2026)
+
+A logistic head on emotion2vec embeddings, trained on **RAVDESS only** (24 English actors, l2 picked
+by leave-actors-out). Rasa stays evaluation only. Rasa test, 50 per speaker and emotion
+(hi 554, ta 690 utterances), balanced accuracy, chance 14%:
+
+| | Hindi | Tamil | arousal AUC hi / ta |
+|---|---|---|---|
+| emotion2vec's own head (step 3 today) | 36.9% | 35.2% | 0.86 / 0.83 |
+| head, no reference | 37.5% | 35.7% | 0.88 / 0.88 |
+| **head, minus 3 calm lines of the same speaker** | **39.8%** | **42.4%** | **0.88 / 0.89** |
+| head, minus 5 calm lines | 40.6% | 42.7% | 0.88 / 0.90 |
+| head, minus the speaker's average of 20 mixed lines | 43.5% | 47.5% | 0.88 / 0.90 |
+| the same, when those lines share one emotion | 24.2% | 23.6% | 0.59 / 0.57 |
+
+1. **Subtracting a calm reference helps on both languages** (+3 / +7 points with 3 calm lines), mostly
+   by curing "everything is happy": Tamil fear 6% -> 23%, sad 10% -> 33%; neutral 62% -> 81%.
+2. **A speaker's own average looks best but is unsafe.** It needs mixed emotions; a character who is
+   angry for the whole scene drops to ~24%, worse than today. Movie clips have no calm reference, so
+   step 3 keeps emotion2vec's output there; players do have one (the mic-check reading).
+3. Disgust stays near zero and sad/fear stay low. Audio alone won't fix these; step 4's context fusion
+   still picks the card's label.
+
+Saved head: `backend/pipeline/speech/emotion_head.npz` (`head_probs(embedding, calm)`).
+Reproduce: `notebooks/emotion_head.ipynb` (embeddings, GPU), then `python scripts/train_emotion_head.py --save`.
+
 ## Generated scenes (3.6)
 
 Nobody records, so `make_scenes.py` builds them from `data/scene_scripts.json`: 10 Hindi (Rohit,

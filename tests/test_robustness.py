@@ -103,12 +103,15 @@ def test_refine_batches_lines_and_passes_earlier_translations(monkeypatch):
 
     monkeypatch.setattr(R, "chat_json", fake_chat_json)
     monkeypatch.setattr(R, "fit_lengths", lambda lines, out, tgt: out)
+    monkeypatch.setattr(R, "review", lambda lines, out, *a, **k: out)
+    monkeypatch.setattr(R, "secret", lambda name: None)              # Groq-sized batches
+    monkeypatch.setattr(R, "translator_model", lambda: None)
     lines = [{"line_id": i, "text": f"line {i}"} for i in range(1, 7)]
     out = R.refine(lines, [""] * 6, "hi", "ta", scene={"setting": "x"})
     assert [o["translation"] for o in out] == ["T1", "T2", "T3", "T4", "T5", "T6"]
-    assert [len(r["lines"]) for r in requests] == [3, 3]          # config translate_batch: 3
+    assert [len(r["lines"]) for r in requests] == [2, 2, 2]       # config translate_batch: 2
     assert "already_translated" not in requests[0]
-    assert [a["translation"] for a in requests[1]["already_translated"]] == ["T1", "T2", "T3"]
+    assert [a["translation"] for a in requests[2]["already_translated"]] == ["T1", "T2", "T3", "T4"]
     assert requests[0]["lines"][0]["draft"].startswith("(no usable draft")
 
 

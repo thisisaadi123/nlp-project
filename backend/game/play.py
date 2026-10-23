@@ -11,11 +11,10 @@ import numpy as np
 
 from backend.game.analyzer import ProsodyAnalyzer
 from backend.game.library import Reference
-from backend.game.shape import shape
 from backend.roman import romanize
 from backend.scoring.arousal import FEATURES, Baseline, baseline
-from backend.scoring.compare import score
-from backend.scoring.feedback import tips
+from backend.scoring.director import level, score_line
+from backend.settings import config
 
 NO_VOICE = "We couldn't hear a voice in that recording. Check your microphone and try again."
 MIN_SECONDS = 0.5
@@ -61,12 +60,26 @@ def stressed_span(words: list[dict], targets: list[str], lang: str) -> tuple[flo
     return best
 
 
+# Languages close enough that a detector confuses them; never call a take "the wrong language" between these.
+_CLOSE = {frozenset({"hi", "mr"})}
+
+
+def wrong_language_heard(a, lang: str) -> str | None:
+    """The language the take was clearly spoken in, when it isn't the line's language."""
+    heard = getattr(a, "language", None)
+    if not heard or heard == lang or heard not in config()["languages"] or a.language_confidence < 0.8:
+        return None
+    return None if frozenset({heard, lang}) in _CLOSE else heard
+
+
 def valid_baseline(data) -> Baseline | None:
     """A baseline sent back by the browser: accept it only if it has every feature as a number."""
     if not isinstance(data, dict):
         return None
     try:
         b = {k: float(data[k]) for k in FEATURES}
+        if "energy_level" in data:      # loudness of the calm reading; older baselines lack it
+            b["energy_level"] = float(data["energy_level"])
     except (KeyError, TypeError, ValueError):
         return None
     return b if all(np.isfinite(v) for v in b.values()) else None
@@ -79,10 +92,12 @@ def calibrate(y: np.ndarray) -> dict:
     a = ProsodyAnalyzer().analyze(y, "")
     if a.prosody is None:
         return {"ok": False, "error": NO_VOICE}
-    return {"ok": True, "baseline": baseline([a.prosody])}
+    return {"ok": True, "baseline": {**baseline([a.prosody]), "energy_level": level(a.prosody)}}
 
 
-def play(ref: Reference, y: np.ndarray, player_baseline: Baseline | None, analyzer) -> dict:
+def play(ref: Reference, y: np.ndarray, player_baseline: Baseline | None, analyzer,
+         offset: float | None = None) -> dict:
+    """`offset`: the scene time at which the browser started recording (for the timing check)."""
     if len(y) < MIN_SECONDS * 16000:
         return {"ok": False, "error": "That recording is too short. Say the whole line."}
     a = analyzer.analyze(y, ref.target_language)
@@ -91,23 +106,28 @@ def play(ref: Reference, y: np.ndarray, player_baseline: Baseline | None, analyz
 
     lang = ref.target_language
     content = content_similarity(a.text, ref.card["translation"], lang) if a.text is not None else None
-    span = stressed_span(a.words, ref.card.get("stress") or [], lang)
-    r = score(ref.prosody, a.prosody, ref.baseline, player_baseline, target_span=span, content=content)
+    wrong_language = wrong_language_heard(a, lang)
+    if wrong_language:
+        content = 0.0
+    r = score_line(a.prosody, ref.prosody, ref.card, player_baseline, offset, content, ref.baseline)
 
-    advice = tips(r)
-    if content is not None and content < 0.6:
+    # the weakest part's tip first: one thing to fix, not five
+    advice = [p.tip for _, p in sorted(r.parts.items(), key=lambda kv: kv[1].score) if p.tip]
+    if wrong_language:
+        names = config()["languages"]
+        advice = [f"That sounded like {names[wrong_language]['name']}. Say the line in {names[lang]['name']}."] + advice[:2]
+    elif content is not None and content < 0.6:
         advice = [f"Say the line as written. We heard: “{a.text}”"] + advice[:2]
     return {
         "ok": True,
         "score": r.score,
         "verdict": r.verdict,
-        "components": {k: round(100 * v) for k, v in r.components.items()},
+        "parts": {k: {"score": round(100 * p.score), "verdict": p.verdict, "tip": p.tip} for k, p in r.parts.items()},
+        "components": {k: round(100 * p.score) for k, p in r.parts.items()},
         "tips": advice,
         "heard": a.text,
         "heard_roman": romanize(a.text, lang) if a.text else None,
         "duration": {"yours": round(a.prosody.duration, 2), "original": round(ref.prosody.duration, 2)},
-        "intensity": {"yours": round(r.details["att_arousal"], 2), "original": round(r.details["ref_arousal"], 2)},
         "analyzer": analyzer.name,
         "calibrated": player_baseline is not None,
-        "shape": shape(a.prosody),
     }

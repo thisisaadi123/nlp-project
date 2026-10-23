@@ -1,25 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Ear, Mic, Star, X } from "lucide-react";
+import { Ear, Mic, Star } from "lucide-react";
 import clsx from "clsx";
-import { LANGS, LANG_NATIVE, LANG_NAME, type Lang, type Shape } from "../lib/api";
-
-/** The line's words lighting up at the original's pace (time in the melody line's seconds). */
-export function Karaoke({ shape, t, roman, small = false }: { shape: Shape; t: number; roman?: string[]; small?: boolean }) {
-  return (
-    <p className={clsx("font-script font-bold leading-snug", small ? "text-xl" : "text-center text-[clamp(1.6rem,4vw,2.6rem)]")}>
-      {shape.words.map((w, i) => {
-        const done = t >= w.end;
-        const now = t >= w.start && t < w.end;
-        return (
-          <span key={i} className={clsx("transition-colors duration-150", w.stress ? (now ? "text-gold" : done ? "text-gold/70" : "text-gold/35") : now ? "text-paper" : done ? "text-paper/60" : "text-paper/25")}>
-            {roman?.[i] ?? w.w}
-            {i < shape.words.length - 1 && " "}
-          </span>
-        );
-      })}
-    </p>
-  );
-}
+import { LANGS, LANG_NATIVE, LANG_NAME, type Lang } from "../lib/api";
 
 /** One dot per line: done ones filled, the current one wide. */
 export function ProgressDots({ total, current }: { total: number; current: number }) {
@@ -48,28 +30,6 @@ export function LanguagePicker({ value, onChange, size = "lg" }: { value: Lang |
         </button>
       ))}
     </div>
-  );
-}
-
-const HINTS: Record<"listen" | "turn" | "result", string> = {
-  listen: "Listen to how they say it. Watch the melody line: thick means loud, the dot is the punch.",
-  turn: "Your turn. Say your line over the scene and follow the melody line.",
-  result: "Gold is the original, mint is you. The closer they look, the better.",
-};
-
-/** First-time walkthrough: one short hint per step, on the first line only. */
-export function Hint({ step, onDismiss }: { step: keyof typeof HINTS; onDismiss: () => void }) {
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div key={step} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-        className="flex items-start gap-3 rounded-lg border border-gold/40 bg-gold/10 px-4 py-3 text-sm">
-        <span className="font-marquee text-gold">{step === "listen" ? "1" : step === "turn" ? "2" : "3"}</span>
-        <p className="flex-1 text-paper/90">{HINTS[step]}</p>
-        <button type="button" onClick={onDismiss} aria-label="Got it, hide hints" className="text-dim hover:text-paper">
-          <X className="h-4 w-4" />
-        </button>
-      </motion.div>
-    </AnimatePresence>
   );
 }
 
@@ -107,7 +67,7 @@ export function HelpOverlay({ open, onClose }: { open: boolean; onClose: () => v
             onClick={(e) => e.stopPropagation()}>
             <h2 className="font-marquee text-2xl">HOW TO PLAY</h2>
             <HowToPlay compact />
-            <p className="text-sm text-dim">The melody line shows how the original is said: up and down is pitch, thick is loud, the dot is where they punch. Match it to earn a Dub.</p>
+            <p className="text-sm text-dim">Each line: listen to the actor, then say the same line in your language over the muted scene. Copy how they say it: the feeling, how loud, which word they hit, and finish in time.</p>
             <button type="button" onClick={onClose} className="self-end rounded-md bg-gold px-5 py-2 font-mono text-sm font-bold text-ink">GOT IT</button>
           </motion.div>
         </motion.div>

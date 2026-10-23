@@ -12,6 +12,7 @@ data/clips/*
 data/cache/
 data/datasets/
 data/library/
+data/feedback/
 models/
 *.wav
 *.mp4

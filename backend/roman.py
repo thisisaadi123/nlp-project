@@ -137,6 +137,12 @@ def _simplify_vowels(word: str) -> str:
 
 
 def _brahmic(text: str, lang: str) -> str:
+    if lang in ("hi", "mr"):
+        # the "English" vowels in loanwords: पॉकेट -> pocket, लॅब -> lab (ITRANS has no clean spelling)
+        text = text.replace("\u0949", "\u094b").replace("\u0945", "")
+    if lang == "bn":
+        # ড় ঢ় য় stay decomposed after NFC (consonant + nukta) and come out as "da়"; say them as spoken
+        text = text.replace("ড\u09bc", "র").replace("ঢ\u09bc", "র").replace("য\u09bc", "য")
     s = sanscript.transliterate(_drop_final_schwa(text, lang), _SCRIPTS[lang], sanscript.ITRANS)
     s = re.sub(r"[A-Za-z.~^]+", lambda m: _simplify_vowels(m.group()), s)
     for a, b in _ITRANS:
@@ -144,6 +150,8 @@ def _brahmic(text: str, lang: str) -> str:
     s = s.replace("||", ".").replace("|", ".")
     if lang == "te":
         s = re.sub(r"n\b", "m", s)                  # word-final anusvara: ఏం -> em
+    if lang == "bn":
+        s = s.replace("v", "b")                     # Bengali ব is b (বাড়ি = baari)
     return s.lower()
 
 

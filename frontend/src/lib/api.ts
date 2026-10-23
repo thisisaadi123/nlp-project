@@ -45,9 +45,9 @@ export interface Card {
   intensity: "low" | "medium" | "high" | null;
   tone: string | null;
   stress: string[];
-  coach: string;
   delivery: string;
   playable: boolean;
+  voice?: boolean;   // a spoken example of the dubbed line exists (Sarvam Bulbul)
   shape: Shape | null;
 }
 
@@ -55,6 +55,8 @@ export interface Character {
   id: string;
   name: string | null;
   description: string | null;
+  gender?: string | null;
+  age?: string | null;
 }
 
 export interface Entry {
@@ -74,15 +76,22 @@ export interface Entry {
 
 export type Baseline = Record<string, number>;
 
+/** One part of the director's-note score (backend/scoring/director.py). */
+export interface ScorePart {
+  score: number;    // 0..100
+  verdict: string;  // e.g. "on time", "too soft"
+  tip: string;      // what to fix; "" when it was right
+}
+
 export interface ScoreResult {
   score: number;
   verdict: "Dub" | "Goose";
+  parts: Record<string, ScorePart>;
   components: Record<string, number>;
   tips: string[];
   heard: string | null;
   heard_roman: string | null;
   duration: { yours: number; original: number };
-  intensity: { yours: number; original: number };
   calibrated: boolean;
   shape: Shape;
 }
@@ -109,6 +118,17 @@ export const api = {
   thumbnailUrl: (id: string) => `/api/clips/${enc(id)}/thumbnail`,
   subtitlesUrl: (id: string) => `/api/clips/${enc(id)}/subtitles.vtt`,
   lineAudioUrl: (id: string, line: number) => `/api/clips/${enc(id)}/lines/${line}/audio`,
+  voiceUrl: (id: string, line: number) => `/api/clips/${enc(id)}/lines/${line}/voice`,
+  /** "Was this score fair?" (only the numbers are sent; never audio). */
+  feedback: (clip: string, line: number, r: ScoreResult, fair: boolean) => {
+    const form = new FormData();
+    form.append("clip", clip);
+    form.append("line", String(line));
+    form.append("score", String(r.score));
+    form.append("fair", String(fair));
+    form.append("parts", JSON.stringify(r.components ?? {}));
+    return fetch("/api/feedback", { method: "POST", body: form }).then((res) => json<{ ok: boolean }>(res));
+  },
   calibration: (lang: Lang) => fetch(`/api/calibration/${lang}`).then((r) => json<{ text: string }>(r)),
 
   calibrate: (audio: Blob) => {
@@ -117,12 +137,14 @@ export const api = {
     return fetch("/api/calibrate", { method: "POST", body: form }).then((r) => json<{ baseline: Baseline }>(r));
   },
 
-  score: (audio: Blob, clip: string, line: number, baseline: Baseline | null) => {
+  /** `offset`: the scene time at which the recording started, for the timing check. */
+  score: (audio: Blob, clip: string, line: number, baseline: Baseline | null, offset?: number) => {
     const form = new FormData();
     form.append("audio", audio, fileName(audio, "take"));
     form.append("clip", clip);
     form.append("line", String(line));
     if (baseline) form.append("baseline", JSON.stringify(baseline));
+    if (offset !== undefined) form.append("offset", offset.toFixed(3));
     return fetch("/api/score", { method: "POST", body: form }).then((r) => json<ScoreResult>(r));
   },
 

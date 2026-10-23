@@ -8,6 +8,7 @@ import json
 import re
 
 from backend.llm.client import LLMError, chat_json
+from backend.pipeline.translate.refine import translator_model
 from backend.pipeline.context.fusion import intensity_level
 from backend.settings import config
 
@@ -99,7 +100,8 @@ def build_context(lines: list[dict], captions: dict | None, language: str) -> di
     messages = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": json.dumps(request, ensure_ascii=False, indent=1) + "\n\n" + OUTPUT_SPEC}]
     try:
-        result = chat_json(messages, max_tokens=4000, effort="medium", validate=valid_context)
+        result = chat_json(messages, max_tokens=4000, effort="medium", validate=valid_context,
+                           primary_only=config()["llm"].get("translate_primary_only", True), prefer=translator_model())
     except LLMError as e:
         # Translation still works without scene context, just less precisely.
         return {"lines": [], "confidence": f"unavailable: {e}"}

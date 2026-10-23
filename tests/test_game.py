@@ -79,11 +79,10 @@ def test_entry_has_cards_audio_and_a_speaker_baseline(lib):
     assert lib.entries("ta")[0]["id"] == "zz_01.hi-ta" and lib.entries("hi") == []
 
 
-def test_cards_carry_names_coaching_and_a_melody_line(lib):
+def test_cards_carry_names_and_a_melody_line(lib):
     e = lib.entry("zz_01.hi-ta")
     c = e["lines"][0]
     assert c["speaker_name"] == "younger brother" and c["addressee_name"] == "elder brother"
-    assert c["coach"] == "Angry, loud. Hit அண்ணா hard. About 2 seconds."
     sh = c["shape"]
     assert abs(sh["duration"] - 1.5) < 0.3 and sh["step"] == 0.05
     assert len(sh["pitch"]) == len(sh["loud"]) == len(sh["voiced"]) > 20
@@ -96,12 +95,6 @@ def test_cards_carry_names_coaching_and_a_melody_line(lib):
     assert e["title"] == "Test Film" and e["difficulty"] == "easy"
 
 
-def test_coach_sentences():
-    from backend.game.coach import coach
-    assert coach({"emotion": "sad", "intensity": "low", "stress": [], "duration": 3.2}) == "Sad, soft. About 3 seconds."
-    assert coach({"emotion": "neutral", "intensity": None, "stress": ["भैया"], "duration": 1.0}) == \
-        "Matter-of-fact. Hit भैया hard. About 1 second."
-    assert coach({"emotion": None, "duration": 2}) == "Natural. About 2 seconds."
 
 
 @pytest.mark.parametrize("bad", ["../zz_01.hi-ta", "zz_01.hi-ta/../..", "nope", "", "/etc"])
@@ -121,8 +114,8 @@ def test_saying_it_like_the_original_is_a_dub(lib):
     ref = lib.reference("zz_01.hi-ta", 0)
     y = voice(180, 130, 1.5, seed=0)
     r = play(ref, y, None, ProsodyAnalyzer())
-    assert r["ok"] and r["verdict"] == "Dub" and r["score"] >= 70
-    assert "content" not in r["components"] and r["heard"] is None and r["analyzer"] == "prosody"
+    assert r["ok"] and r["verdict"] == "Dub" and r["score"] >= 65
+    assert "words" not in r["components"] and r["heard"] is None and r["analyzer"] == "prosody"
 
 
 def test_a_much_slower_flat_attempt_scores_lower(lib):
@@ -155,8 +148,8 @@ def test_full_mode_adds_content_and_finds_the_stressed_word(lib):
     words = [{"w": "அண்ணா", "start": 0.3, "end": 0.8}, {"w": "நீ", "start": 0.8, "end": 1.0}]
     right = play(ref, voice(180, 130, 1.5), None, FakeASR("அண்ணா நீ என்ன பண்ணிட்ட", words))
     wrong = play(ref, voice(180, 130, 1.5), None, FakeASR("வணக்கம் எல்லாருக்கும்"))
-    assert right["components"]["content"] == 100 and right["heard_roman"].startswith("anna")
-    assert wrong["components"]["content"] < 50 and wrong["score"] < right["score"]
+    assert right["components"]["words"] == 100 and right["heard_roman"].startswith("anna")
+    assert wrong["components"]["words"] < 50 and wrong["score"] < right["score"]
     assert wrong["tips"][0].startswith("Say the line as written")
 
 
@@ -175,7 +168,7 @@ def test_stressed_span():
 
 def test_calibration_and_baseline_validation():
     r = calibrate(voice(150, 150, 2.0))
-    assert r["ok"] and set(r["baseline"]) == set(FEATURES)
+    assert r["ok"] and set(r["baseline"]) == set(FEATURES) | {"energy_level"}
     assert valid_baseline(r["baseline"]) == r["baseline"]
     assert valid_baseline({"pitch_level": 1}) is None
     assert valid_baseline({k: "x" for k in FEATURES}) is None
@@ -190,6 +183,7 @@ def api(lib, monkeypatch):
     from fastapi.testclient import TestClient
     from backend.api import app as A
     monkeypatch.setattr(A, "library", lib)
+    monkeypatch.setattr(A, "get_analyzer", lambda: ProsodyAnalyzer())   # no network calls in tests
     return TestClient(A.app)
 
 
@@ -233,10 +227,10 @@ def test_api_premiere_rejects_bad_input(api):
                 [("takes", ("0.webm", b"not audio", "audio/webm"))]) == 400
 
 
-def test_api_score_returns_the_players_melody_line(api):
+def test_api_score_returns_the_parts_of_the_note(api):
     r = api.post("/api/score", data={"clip": "zz_01.hi-ta", "line": "0"},
                  files={"audio": ("take.wav", wav_bytes(voice(180, 130, 1.5)), "audio/wav")}).json()
-    assert len(r["shape"]["pitch"]) > 20 and r["shape"]["words"] == []
+    assert set(r["parts"]) >= {"timing", "volume", "tone"} and "shape" not in r
 
 
 def test_api_lists_and_serves_clips(api):
@@ -277,3 +271,107 @@ def test_api_rejects_bad_input(api):
     assert garbage_baseline.status_code == 200 and garbage_baseline.json()["calibrated"] is False
     too_long = wav_bytes(voice(150, 150, 31.0))
     assert api.post("/api/calibrate", files={"audio": ("l.wav", too_long, "audio/wav")}).status_code == 400
+
+
+# --- the director's-note score ------------------------------------------------------------------------
+
+def test_timing_on_the_scene_clock_catches_a_late_start(lib):
+    ref = lib.reference("zz_01.hi-ta", 0)
+    card_start = ref.card["start"] + ref.card["onset"]
+    y = voice(180, 130, 1.5, seed=0)
+    from backend.scoring.prosody import extract
+    lead = extract(y).start                       # silence before the voice in this recording
+    on_time = play(ref, y, None, ProsodyAnalyzer(), offset=card_start - lead)
+    late = play(ref, y, None, ProsodyAnalyzer(), offset=card_start - lead + 0.8)
+    assert on_time["parts"]["timing"]["verdict"] == "on time"
+    assert late["parts"]["timing"]["verdict"] == "late" and "0.8 s late" in late["parts"]["timing"]["tip"]
+    assert late["score"] < on_time["score"]
+
+
+def test_volume_is_judged_against_the_players_calm_reading():
+    from backend.scoring.director import volume
+    from backend.scoring.prosody import extract
+    calm = calibrate(voice(150, 150, 2.0, loud=0.1))["baseline"]
+    soft = extract(voice(150, 150, 1.5, loud=0.1, seed=1))
+    loud = extract(voice(190, 170, 1.5, loud=0.9, seed=1))
+    assert volume(soft, calm, "medium", None).verdict == "normal"
+    assert volume(loud, calm, "high", None).verdict in ("loud", "too loud")
+    assert volume(soft, calm, "high", "angry").verdict == "too soft"
+    assert "SHOUTING" in volume(soft, calm, "high", "angry").tip
+
+
+def test_score_parts_explain_themselves(lib):
+    r = play(lib.reference("zz_01.hi-ta", 0), voice(140, 140, 3.4, loud=0.1, seed=5), None, ProsodyAnalyzer())
+    assert set(r["parts"]) >= {"timing", "volume", "tone"}
+    for p in r["parts"].values():
+        assert 0 <= p["score"] <= 100 and p["verdict"] and (p["score"] >= 60 or p["tip"])
+
+
+def test_cloud_analyzer_adds_words_and_degrades_without_them(lib, monkeypatch):
+    from backend.game import analyzer as A, stt
+    ref = lib.reference("zz_01.hi-ta", 0)
+    monkeypatch.setattr(stt, "hear", lambda y: {"text": ref.card["translation"], "language": "ta", "confidence": 0.99})
+    right = play(ref, voice(180, 130, 1.5), None, A.CloudAnalyzer())
+    monkeypatch.setattr(stt, "hear", lambda y: {"text": "வணக்கம் எல்லாருக்கும்", "language": "ta", "confidence": 0.99})
+    wrong = play(ref, voice(180, 130, 1.5), None, A.CloudAnalyzer())
+    monkeypatch.setattr(stt, "hear", lambda y: None)                    # no key / Sarvam down
+    unchecked = play(ref, voice(180, 130, 1.5), None, A.CloudAnalyzer())
+    assert right["parts"]["words"]["score"] == 100 and wrong["parts"]["words"]["score"] < 50
+    assert wrong["score"] < right["score"] and wrong["tips"][0].startswith("Say the line as written")
+    assert "words" not in unchecked["parts"] and unchecked["ok"]
+
+
+def test_stt_without_a_key_returns_none(monkeypatch):
+    from backend.game import stt
+    monkeypatch.setattr(stt.sarvam_http, "secrets", lambda name: [])
+    assert stt.hear(np.zeros(16000, np.float32)) is None
+
+
+def test_voices_are_cast_by_gender_and_distinct(monkeypatch):
+    from backend.game import voice
+    v = voice.cast({"A": {"gender": "male"}, "B": {"gender": "female"}, "C": {"gender": "male"}}, ["A", "B", "C", "D"])
+    assert v["A"] != v["C"] and v["B"] in voice.config()["game"]["voice"]["female"] and v["D"]
+
+
+def test_voice_is_read_faster_when_too_long(monkeypatch):
+    from backend.game import voice
+    calls = []
+    def fake(text, lang, speaker, pace):
+        calls.append(pace)
+        buf = io.BytesIO()
+        sf.write(buf, np.zeros(int(16000 * 3.0 / pace), np.float32), 16000, format="WAV")
+        return buf.getvalue()
+    monkeypatch.setattr(voice, "_tts", fake)
+    voice.speak("x", "ta", "shubh", target_seconds=1.5)
+    assert calls[0] == 1.0 and 1.9 <= calls[1] <= 2.0
+    calls.clear()
+    voice.speak("x", "ta", "shubh", target_seconds=2.8)
+    assert calls == [1.0]
+
+
+def test_a_take_in_the_wrong_language_is_called_out(lib, monkeypatch):
+    from backend.game import analyzer as A, stt
+    ref = lib.reference("zz_01.hi-ta", 0)
+    monkeypatch.setattr(stt, "hear", lambda y: {"text": "भैया तुमने क्या किया", "language": "hi", "confidence": 0.97})
+    r = play(ref, voice(180, 130, 1.5), None, A.CloudAnalyzer())
+    assert r["parts"]["words"]["score"] == 0 and r["tips"][0] == "That sounded like Hindi. Say the line in Tamil."
+
+
+def test_close_languages_and_unsure_detections_are_not_called_wrong():
+    from backend.game.analyzer import Analysis
+    from backend.game.play import wrong_language_heard
+    assert wrong_language_heard(Analysis(None, language="mr", language_confidence=0.99), "hi") is None
+    assert wrong_language_heard(Analysis(None, language="hi", language_confidence=0.5), "ta") is None
+    assert wrong_language_heard(Analysis(None, language="ta", language_confidence=0.99), "ta") is None
+
+
+def test_feedback_is_stored_without_audio(api, tmp_path, monkeypatch):
+    from backend.api import app as A
+    monkeypatch.setattr(A, "FEEDBACK", tmp_path / "ratings.jsonl")
+    r = api.post("/api/feedback", data={"clip": "zz_01.hi-ta", "line": 0, "score": 62.5, "fair": "false",
+                                       "parts": json.dumps({"timing": 80, "volume": 40})})
+    assert r.status_code == 200
+    row = json.loads((tmp_path / "ratings.jsonl").read_text().strip())
+    assert row == {"clip": "zz_01.hi-ta", "line": 0, "score": 62.5, "parts": {"timing": 80, "volume": 40}, "fair": False}
+    assert api.post("/api/feedback", data={"clip": "nope", "line": 0, "score": 1, "fair": "true"}).status_code == 404
+    assert api.post("/api/feedback", data={"clip": "zz_01.hi-ta", "line": 0, "score": 900, "fair": "true"}).status_code == 400

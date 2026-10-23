@@ -109,7 +109,7 @@ export default function App() {
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
             <button type="button" aria-label="How to play" className="text-dim hover:text-paper"
-              onClick={() => { setHelp(true); progress.setWalkthroughSeen(false); }}>
+              onClick={() => setHelp(true)}>
               <CircleHelp className="h-4 w-4" />
             </button>
           </div>

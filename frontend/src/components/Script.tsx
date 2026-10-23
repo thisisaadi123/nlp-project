@@ -5,8 +5,8 @@ import { Star } from "lucide-react";
 const clean = (w: string) => w.replace(/[^\p{L}\p{M}\p{N}]/gu, "");
 
 /** The line to dub, in the target script or romanized, with the stressed word lit up. */
-export function ScriptLine({ text, roman, stress, showRoman }: {
-  text: string; roman: string; stress: string[]; showRoman: boolean;
+export function ScriptLine({ text, roman, stress, showRoman, center = false }: {
+  text: string; roman: string; stress: string[]; showRoman: boolean; center?: boolean;
 }) {
   const words = text.split(/\s+/).filter(Boolean);
   const romanWords = roman.split(/\s+/).filter(Boolean);
@@ -19,8 +19,9 @@ export function ScriptLine({ text, roman, stress, showRoman }: {
   return (
     <p
       lang={showRoman ? "en" : undefined}
-      className={clsx("leading-snug text-paper", showRoman ? "font-body text-[clamp(1.6rem,3.6vw,2.6rem)] font-medium"
-        : "font-script text-[clamp(1.8rem,4.2vw,3rem)] font-bold")}
+      className={clsx("leading-snug text-paper", center && "text-center", showRoman ? "font-body font-medium" : "font-script font-bold",
+        // long lines get smaller type so the whole line fits without pushing the buttons off screen
+        (showRoman ? roman : text).length > 60 ? "text-xl sm:text-2xl" : (showRoman ? roman : text).length > 30 ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl")}
     >
       {shown.map((w, i) => (
         <span key={i} className={clsx(canMark && stressed.has(i) && "relative text-gold")}>

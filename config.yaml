@@ -40,15 +40,34 @@ llm:
   # gpt-oss-120b kept bhai/bhaiya register apart in Tamil; qwen3.8 collapsed both to "bro",
   # so qwen is used only for image captioning.
   text_model: openai/gpt-oss-120b
+  cerebras_model: gpt-oss-120b            # same model on Cerebras' free tier (CEREBRAS_API_KEY), used when Groq is out
   text_backup_model: openai/gpt-oss-20b   # own daily quota; lower quality, used when 120b is out
   vision_model: qwen/qwen3.8-27b
   vision_max_tokens: 800     # qwen's free tier has a low output-tokens-per-minute cap
   # "high" fixed register and grammar errors that "medium" made (e.g. "summa iru" for "chup kar"); ~7 s per clip
   translate_effort: high
+  # Translation never falls back to the smaller model or Gemini: gpt-oss-20b's translations copied
+  # Tamil words into Hindi script and mixed up kinship terms. If 120b's quota is out, it stops.
+  translate_primary_only: true
+  # First draft: "sarvam" (Sarvam Mayura, spoken-style, needs SARVAM_API_KEY; falls back to
+  # IndicTrans2 without it) or "indictrans2" (written-style, runs locally)
+  draft_engine: sarvam
+  sarvam_model: mayura:v1
+  sarvam_mode: modern-colloquial
+  # Who understands and writes the dialogue (scene context, translation, review): "sarvam", "gemini"
+  # or "gpt-oss". gpt-oss wrote broken Tamil over good drafts ("puddi" for "girl"); Sarvam's own
+  # models write spoken Tamil ("உண்மையாவே சொல்லு, பொண்ணு யாரு?"). Uses SARVAM_API_KEY credits.
+  translator: sarvam
+  translator_sarvam_model: sarvam-105b-conversations   # sarvam-105b (reasoning) thought for 19.5K tokens without answering
+  translator_gemini_model: gemini-flash-latest
+  translate_review: true       # a second pass where the model edits the whole scene's dub as a native writer
   temperature: 0.3
   # Groq free tier: input + max_tokens of one request must fit in this per-minute budget
   groq_tokens_per_minute: 8000
-  translate_batch: 3         # lines per translation call (keeps each request inside the budget)
+  translate_batch: 2         # lines per translation call on Groq (keeps each request inside its per-minute budget)
+  # With a Cerebras key, a whole scene goes in one call: every line sees the others, and high
+  # effort has room to reason (Groq's 8000-token minute budget left too little room for it).
+  translate_batch_cerebras: 16
   fallback_provider: gemini
   fallback_model: gemini-flash-latest
 
@@ -64,13 +83,28 @@ scoring:
     emphasis: 15
     contour: 20
     timing: 20
-  dub_threshold: 70   # score >= this earns a Dub, below is a Goose
+  dub_threshold: 70   # step 2 research score only; the game's Dub line is game.score.dub_threshold
 
 game:
   library_dir: data/library
+  # A spoken example of each dubbed line (Sarvam Bulbul, SARVAM_API_KEY), made once at library build.
+  voice:
+    enabled: true
+    model: bulbul:v3
+    male: [shubh, rahul, vijay, aditya, kabir, gokul, anand, rohan]
+    female: [priya, kavya, shruti, neha, kavitha, pooja, ritu, shreya]
+  # The game's score (backend/scoring/director.py): did the player follow the line's note?
+  score:
+    weights: {timing: 30, volume: 30, punch: 20, tone: 20, words: 20}
+    dub_threshold: 55     # 55-70 is a Dub; 70+ and 85+ earn more stars (frontend/src/lib/progress.ts)
   # "prosody": CPU only, no models (pitch, loudness, timing, stress, prosody arousal).
+  # "cloud": prosody + Sarvam speech-to-text for the words (SARVAM_API_KEY; the take is sent to Sarvam).
   # "full": adds step 3's ASR (content score, word timings) and emotion2vec (needs the GPU stack).
-  analyzer: prosody
+  analyzer: cloud
+  # Sarvam speech-to-text for the WORDS check ("cloud" analyzer). saarika:v2.5 is the transcription
+  # model we tested (near word-perfect on spoken Tamil film audio); Sarvam calls it legacy in favour
+  # of saaras:v3, which gave the same transcripts.
+  stt_model: saarika:v2.5
   # Read once, calmly, before playing: gives the player's voice a neutral baseline.
   calibration:
     hi: "आज मौसम काफ़ी अच्छा है, और मैं शाम को बाज़ार जाऊँगा।"

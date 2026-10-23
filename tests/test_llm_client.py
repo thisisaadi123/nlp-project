@@ -147,3 +147,34 @@ def test_backup_model_answers_but_is_not_cached(tmp_path, monkeypatch):
     result = client.chat_json([{"role": "user", "content": "q"}])
     assert result == {"answer": "from 20b", "_provider": "groq:openai/gpt-oss-20b"}
     assert list(tmp_path.glob("*.json")) == []   # next run asks 120b again
+
+
+def test_cerebras_serves_the_main_model_when_groq_is_out(tmp_path, monkeypatch):
+    monkeypatch.setattr(client, "CACHE_DIR", tmp_path)
+    monkeypatch.setenv("CEREBRAS_API_KEY", "test")
+    def out(*a, **k):
+        raise client.LLMError("Groq daily limit")
+    monkeypatch.setattr(client, "_groq", out)
+    monkeypatch.setattr(client, "_cerebras", lambda model, messages, max_tokens, effort: {"answer": model})
+    monkeypatch.setattr(client, "_gemini", lambda *a, **k: pytest.fail("must not reach Gemini"))
+    r = client.chat_json([{"role": "user", "content": "x"}], primary_only=True)
+    assert r["_provider"].startswith("cerebras:") and len(list(tmp_path.glob("*.json"))) == 1   # cached
+
+
+def test_sarvam_moves_to_the_next_key_when_one_is_out_of_credits(monkeypatch):
+    import httpx
+    from backend import sarvam_http
+    monkeypatch.setattr(sarvam_http, "_spent", set())
+    monkeypatch.setattr(sarvam_http, "secrets", lambda name: ["k1", "k2"])
+    used = []
+    def fake_post(url, headers, **kw):
+        used.append(headers["api-subscription-key"])
+        status = 402 if headers["api-subscription-key"] == "k1" else 200
+        return httpx.Response(status, json={"ok": True}, request=httpx.Request("POST", url))
+    monkeypatch.setattr(sarvam_http.httpx, "post", fake_post)
+    assert sarvam_http.post("/translate", json={}).status_code == 200 and used == ["k1", "k2"]
+    sarvam_http.post("/translate", json={})
+    assert used == ["k1", "k2", "k2"]                 # the spent key is skipped from then on
+    monkeypatch.setattr(sarvam_http, "secrets", lambda name: ["k1"])
+    with pytest.raises(sarvam_http.NoSarvamKey):
+        sarvam_http.post("/translate", json={})

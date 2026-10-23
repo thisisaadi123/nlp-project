@@ -14,6 +14,10 @@ syllables one-to-one. Each component compares things that survive translation:
 
 Components whose models are not built yet (content needs ASR) are skipped and the
 remaining weights are rescaled to 100.
+
+This is the step 2 research score, used by the RAVDESS evaluations (scripts/eval_ravdess.py). The
+game scores takes with backend/scoring/director.py, which checks the line's note instead: across
+voices, most of these components were close to chance (AUC 0.54-0.57).
 """
 from dataclasses import dataclass, field
 
@@ -29,7 +33,7 @@ ENDING_SHARE = 0.25   # final quarter decides rising vs falling
 
 @dataclass
 class Result:
-    score: float
+    score: float                               # 0..100
     components: dict[str, float]               # similarity 0..1 per component
     verdict: str
     details: dict[str, float] = field(default_factory=dict)  # raw measurements for feedback

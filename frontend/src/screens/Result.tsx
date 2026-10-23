@@ -1,20 +1,25 @@
 import { animate, motion } from "framer-motion";
-import { ArrowRight, Flag, Play, RotateCcw } from "lucide-react";
+import { ArrowRight, Check, Clock3, Flag, Music2, Play, RotateCcw, ThumbsDown, ThumbsUp, Type, Volume2, Zap } from "lucide-react";
+import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { Goose } from "../components/Goose";
-import { LedBar } from "../components/Meters";
-import { MelodyLine } from "../components/MelodyLine";
 import { Stars } from "../components/Script";
-import type { ScoreResult, Shape } from "../lib/api";
+import type { ScoreResult } from "../lib/api";
 import { stars } from "../lib/progress";
 
-const LABELS: Record<string, string> = { emotion: "FEEL", contour: "MELODY", timing: "TIMING", emphasis: "PUNCH", content: "WORDS" };
-const ORDER = ["content", "emotion", "contour", "timing", "emphasis"];
+const PARTS = [
+  { key: "timing", label: "TIMING", icon: Clock3 },
+  { key: "volume", label: "VOLUME", icon: Volume2 },
+  { key: "punch", label: "PUNCH", icon: Zap },
+  { key: "tone", label: "TONE", icon: Music2 },
+  { key: "words", label: "WORDS", icon: Type },
+];
 
-export function Result({ result, previous, target, takeUrl, originalUrl, isLast, onRetake, onNext }: {
-  result: ScoreResult; previous: number | null; target: Shape; takeUrl: string; originalUrl: string;
-  isLast: boolean; onRetake: () => void; onNext: () => void;
+export function Result({ result, previous, takeUrl, originalUrl, isLast, onRetake, onNext, onRate }: {
+  result: ScoreResult; previous: number | null; takeUrl: string; originalUrl: string;
+  isLast: boolean; onRetake: () => void; onNext: () => void; onRate?: (fair: boolean) => void;
 }) {
+  const [rated, setRated] = useState<boolean | null>(null);
   const [shown, setShown] = useState(0);
   const dub = result.verdict === "Dub";
   const yours = useRef<HTMLAudioElement>(null);
@@ -61,11 +66,7 @@ export function Result({ result, previous, target, takeUrl, originalUrl, isLast,
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-4 font-mono text-[11px] tracking-widest">
-          <span className="flex items-center gap-1.5"><span className="h-1 w-5 rounded bg-gold" /> ORIGINAL</span>
-          <span className="flex items-center gap-1.5"><span className="h-1 w-5 rounded bg-mint" /> YOU</span>
-        </div>
-        <MelodyLine target={target} compare={result.shape} />
+        <p className="font-mono text-[11px] tracking-[0.25em] text-dim">COMPARE BY EAR</p>
         <div className="flex gap-3">
           <button type="button" onClick={() => play("yours")} className="flex items-center gap-2 rounded-md border border-mint/60 px-4 py-2 font-mono text-sm text-mint hover:bg-mint/10">
             <Play className="h-3.5 w-3.5 fill-current" /> YOURS
@@ -80,11 +81,45 @@ export function Result({ result, previous, target, takeUrl, originalUrl, isLast,
 
       {result.tips[0] && <p className="border-l-2 border-gold pl-4 text-lg text-paper/90">{result.tips[0]}</p>}
 
-      <div className="flex flex-col gap-2 opacity-90">
-        {ORDER.filter((k) => k in result.components).map((k, i) => (
-          <LedBar key={k} label={LABELS[k]} value={result.components[k]} delay={0.3 + i * 0.12} />
-        ))}
-      </div>
+      {onRate && (
+        <div className="flex items-center gap-3 text-sm text-dim">
+          {rated === null ? (
+            <>
+              <span>Was this score fair?</span>
+              {([true, false] as const).map((fair) => (
+                <button key={String(fair)} type="button" aria-label={fair ? "yes, fair" : "no, unfair"}
+                  onClick={() => { setRated(fair); onRate(fair); }}
+                  className="grid h-8 w-8 place-items-center rounded-full border border-rule hover:border-paper hover:text-paper">
+                  {fair ? <ThumbsUp className="h-4 w-4" /> : <ThumbsDown className="h-4 w-4" />}
+                </button>
+              ))}
+            </>
+          ) : (
+            <span>Thanks, that helps us tune the score.</span>
+          )}
+        </div>
+      )}
+
+      <ul className="flex flex-col divide-y divide-rule/60 border-y border-rule/60">
+        {PARTS.filter((p) => result.parts?.[p.key]).map(({ key, label, icon: Icon }, i) => {
+          const part = result.parts[key];
+          const good = part.score >= 70;
+          return (
+            <motion.li key={key} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
+              className="grid grid-cols-[1.5rem_5.5rem_1fr_auto] items-center gap-3 py-2.5">
+              <Icon className={clsx("h-4 w-4", good ? "text-mint" : "text-goose")} />
+              <span className="font-mono text-[11px] tracking-[0.18em] text-dim">{label}</span>
+              <span className={clsx("flex items-center gap-1.5 font-medium", good ? "text-paper" : "text-goose")}>
+                {good && <Check className="h-4 w-4 text-mint" />}{part.verdict}
+              </span>
+              <span className="h-1.5 w-16 overflow-hidden rounded-full bg-ink-3">
+                <motion.span className={clsx("block h-full rounded-full", good ? "bg-mint" : "bg-goose")}
+                  initial={{ width: 0 }} animate={{ width: `${part.score}%` }} transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }} />
+              </span>
+            </motion.li>
+          );
+        })}
+      </ul>
 
       <div className="flex flex-wrap gap-3">
         <button type="button" onClick={onRetake} className="flex items-center gap-2 rounded-md border border-rule px-5 py-3 font-mono text-sm tracking-widest hover:border-paper">

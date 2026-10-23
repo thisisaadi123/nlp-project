@@ -9,7 +9,7 @@ import soundfile as sf
 
 from backend.game import library as L
 from backend.game.analyzer import Analysis, ProsodyAnalyzer
-from backend.game.play import calibrate, content_similarity, play, stressed_span, valid_baseline
+from backend.game.play import calibrate, play, stressed_span, valid_baseline
 from backend.scoring.arousal import FEATURES
 from backend.scoring.prosody import SR, extract
 from tests.test_scoring import voice
@@ -74,7 +74,7 @@ def test_entry_has_cards_audio_and_a_speaker_baseline(lib):
     assert abs(ref.prosody.duration - 1.5) < 0.3
     assert lib.line_audio("zz_01.hi-ta", 2).exists()
     assert lib.entries()[0] == {"id": "zz_01.hi-ta", "clip": "zz_01", "title": "Test Film", "source_language": "hi",
-                                "target_language": "ta", "scene": "a fight", "mood": "tense", "difficulty": "easy",
+                                "target_language": "ta", "scene": "a fight", "mood": "tense", "difficulty": "easy", "uploaded": False,
                                 "lines": 3, "characters": ["younger brother", "elder brother"]}
     assert lib.entries("ta")[0]["id"] == "zz_01.hi-ta" and lib.entries("hi") == []
 
@@ -150,13 +150,19 @@ def test_full_mode_adds_content_and_finds_the_stressed_word(lib):
     wrong = play(ref, voice(180, 130, 1.5), None, FakeASR("வணக்கம் எல்லாருக்கும்"))
     assert right["components"]["words"] == 100 and right["heard_roman"].startswith("anna")
     assert wrong["components"]["words"] < 50 and wrong["score"] < right["score"]
-    assert wrong["tips"][0].startswith("Say the line as written")
+    assert wrong["tips"][0].startswith("We heard “வணக்கம்” where the line says")
 
 
-def test_content_similarity_tolerates_spelling_variants():
-    assert content_similarity("அண்ணா நீ என்ன பண்ணிட்ட", "அண்ணா, நீ என்ன பண்ணிட்ட?", "ta") == 1.0
-    assert content_similarity("அண்ணா நீ என்ன பண்ணிட்டே", "அண்ணா நீ என்ன பண்ணிட்ட", "ta") > 0.85
-    assert content_similarity("ஹலோ", "அண்ணா நீ என்ன பண்ணிட்ட", "ta") < 0.4
+def test_word_check_marks_wrong_and_skipped_words_and_forgives_variants():
+    from backend.game.words import check, tip
+    r = check("கரெக்ட்டா சொல்லு அந்த புள்ள யாரு டா", "கரெக்ட்டா சொல்லு, அந்தப் பொண்ணு யாரு டா?", "ta")
+    assert [w["word"] for w in r["words"] if not w["ok"]] == ["பொண்ணு"] and round(r["score"], 2) == 0.83
+    assert tip(r) == "We heard “புள்ள” where the line says “பொண்ணு”."
+    # spoken spelling variants count as right; a number heard as digits excuses the words where it was said
+    r = check("லேப் ஃபீஸ் கட்ட ஒரு ₹600 பணம் குடுங்க அண்ணி", "லேப் ஃபீஸ் கட்ட ஒரு அறுநூறு ரூபாய் பணம் கொடுங்க அண்ணி.", "ta")
+    assert r["score"] == 1.0
+    assert check("हैलो सब लोग", "पैसे तो हैं नहीं, बाहर निकल जाओ।", "hi")["score"] == 0.0
+    assert tip(check("पैसे नहीं बाहर जाओ", "पैसे नहीं, बाहर जाओ।", "hi")) == ""
 
 
 def test_stressed_span():
@@ -317,7 +323,7 @@ def test_cloud_analyzer_adds_words_and_degrades_without_them(lib, monkeypatch):
     monkeypatch.setattr(stt, "hear", lambda y: None)                    # no key / Sarvam down
     unchecked = play(ref, voice(180, 130, 1.5), None, A.CloudAnalyzer())
     assert right["parts"]["words"]["score"] == 100 and wrong["parts"]["words"]["score"] < 50
-    assert wrong["score"] < right["score"] and wrong["tips"][0].startswith("Say the line as written")
+    assert wrong["score"] < right["score"] and wrong["tips"][0].startswith("We heard “வணக்கம்” where the line says")
     assert "words" not in unchecked["parts"] and unchecked["ok"]
 
 

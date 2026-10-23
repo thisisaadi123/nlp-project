@@ -222,7 +222,7 @@ class Library:
                 continue
             out.append({k: e.get(k) for k in ("id", "clip", "title", "source_language", "target_language",
                                               "scene", "mood", "difficulty")}
-                       | {"lines": sum(c["playable"] for c in e["lines"]),
+                       | {"uploaded": bool(e.get("uploaded")), "lines": sum(c["playable"] for c in e["lines"]),
                           "characters": [c["name"] for c in e.get("characters", []) if c.get("name")][:3]})
         return sorted(out, key=lambda e: (order.get(e["difficulty"], 1), e["id"]))
 

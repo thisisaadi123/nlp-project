@@ -13,6 +13,7 @@ data/cache/
 data/datasets/
 data/library/
 data/feedback/
+data/uploads/
 models/
 *.wav
 *.mp4

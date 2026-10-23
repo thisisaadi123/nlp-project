@@ -67,7 +67,7 @@ export function HelpOverlay({ open, onClose }: { open: boolean; onClose: () => v
             onClick={(e) => e.stopPropagation()}>
             <h2 className="font-marquee text-2xl">HOW TO PLAY</h2>
             <HowToPlay compact />
-            <p className="text-sm text-dim">Each line: listen to the actor, then say the same line in your language over the muted scene. Copy how they say it: the feeling, how loud, which word they hit, and finish in time.</p>
+            <p className="text-sm text-dim">Each line: listen to the actor, then say the same line in your language over the muted scene. Copy how they say it: the feeling, how loud, which word they hit, and finish in time. 70 or more is a Dub; under 70, the goose gets you.</p>
             <button type="button" onClick={onClose} className="self-end rounded-md bg-gold px-5 py-2 font-mono text-sm font-bold text-ink">GOT IT</button>
           </motion.div>
         </motion.div>

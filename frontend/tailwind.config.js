@@ -21,8 +21,18 @@ export default {
       },
       keyframes: {
         flicker: { "0%,100%": { opacity: "1" }, "45%": { opacity: ".55" }, "50%": { opacity: ".9" } },
+        // a stage spotlight drifting across the hero
+        sweep: { "0%,100%": { transform: "translateX(-18%) rotate(-8deg)" }, "50%": { transform: "translateX(18%) rotate(8deg)" } },
+        // an endless ribbon (the content is doubled, so -50% loops seamlessly)
+        ribbon: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
+        bars: { "0%,100%": { transform: "scaleY(.25)" }, "50%": { transform: "scaleY(1)" } },
       },
-      animation: { flicker: "flicker 1.4s ease-in-out infinite" },
+      animation: {
+        flicker: "flicker 1.4s ease-in-out infinite",
+        sweep: "sweep 14s ease-in-out infinite",
+        ribbon: "ribbon 40s linear infinite",
+        bars: "bars 0.9s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

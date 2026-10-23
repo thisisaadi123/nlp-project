@@ -205,12 +205,13 @@ def _cerebras(model: str, messages: list[dict], max_tokens: int, effort: str | N
     raise LLMError(f"Cerebras {model} kept failing")
 
 
-def _gemini(messages: list[dict], max_tokens: int, images: list[bytes] = (), model: str | None = None) -> dict:
+def _gemini(messages: list[dict], max_tokens: int, images: list[bytes] = (), model: str | None = None,
+            video: bytes | None = None) -> dict:
     """Gemini with GEMINI_API_KEY, then the backup keys once a key's daily limit is hit."""
     keys = secrets("GEMINI_API_KEY")
     for i, key in enumerate(keys):
         try:
-            return _gemini_key(key, messages, max_tokens, images, model)
+            return _gemini_key(key, messages, max_tokens, images, model, video)
         except DailyLimit:
             if i == len(keys) - 1:
                 raise
@@ -218,10 +219,12 @@ def _gemini(messages: list[dict], max_tokens: int, images: list[bytes] = (), mod
 
 
 def _gemini_key(key: str, messages: list[dict], max_tokens: int, images: list[bytes] = (),
-                model: str | None = None) -> dict:
+                model: str | None = None, video: bytes | None = None) -> dict:
     model = model or config()["llm"]["fallback_model"]
     system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
     parts = [{"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(img).decode()}} for img in images]
+    if video:
+        parts.append({"inline_data": {"mime_type": "video/mp4", "data": base64.b64encode(video).decode()}})
     parts += [{"text": m["content"]} for m in messages if m["role"] == "user"]
     body = {"contents": [{"role": "user", "parts": parts}],
             "generationConfig": {"responseMimeType": "application/json", "maxOutputTokens": max_tokens,
@@ -327,6 +330,18 @@ def chat_json(messages: list[dict], max_tokens: int = 4000, effort: str = "mediu
 
     main = {f"groq:{model}"} | ({f"cerebras:{cerebras}"} if cerebras else set()) | ({prefer} if prefer else set())
     return _cached(payload, call, validate, primary=main) if cache else call()
+
+
+def video_json(prompt: str, video: bytes, cache: bool = True, validate=None, model: str | None = None) -> dict:
+    """Gemini watching a short video (inline, keep it a few MB) -> parsed JSON dict."""
+    digest = hashlib.sha256(video).hexdigest()
+    payload = {"kind": "video", "model": model or config()["llm"]["fallback_model"], "prompt": prompt, "video": digest}
+
+    def call():
+        return {**_gemini([{"role": "user", "content": prompt}], GEMINI_MAX_TOKENS, model=model, video=video),
+                "_provider": "gemini"}
+
+    return _cached(payload, call, validate) if cache else call()
 
 
 def vision_json(prompt: str, images: list[bytes], cache: bool = True, validate=None) -> dict:

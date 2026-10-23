@@ -14,6 +14,19 @@ export interface Scene {
   difficulty: "easy" | "medium" | "hard";
   lines: number;
   characters: string[];
+  uploaded: boolean;   // the player's own clip
+}
+
+/** Progress of turning a player's clip into a scene (backend/game/upload.py). */
+export interface UploadStatus {
+  id: string;
+  state: "working" | "ready" | "failed";
+  step: string;
+  steps: string[];
+  labels: Record<string, string>;
+  title: string;
+  error?: string;
+  entry?: string;
 }
 
 /** The melody line of one delivery (backend/game/shape.py). Time 0 = first voiced sound. */
@@ -90,6 +103,8 @@ export interface ScoreResult {
   components: Record<string, number>;
   tips: string[];
   heard: string | null;
+  /** The line word by word: said right, or what was heard instead (null when words weren't checked). */
+  word_check: { word: string; ok: boolean; heard: string | null }[] | null;
   heard_roman: string | null;
   duration: { yours: number; original: number };
   calibrated: boolean;
@@ -119,6 +134,17 @@ export const api = {
   subtitlesUrl: (id: string) => `/api/clips/${enc(id)}/subtitles.vtt`,
   lineAudioUrl: (id: string, line: number) => `/api/clips/${enc(id)}/lines/${line}/audio`,
   voiceUrl: (id: string, line: number) => `/api/clips/${enc(id)}/lines/${line}/voice`,
+  upload: (video: File, target: Lang, source: Lang | null, title: string) => {
+    const form = new FormData();
+    form.append("video", video, video.name);
+    form.append("target", target);
+    if (source) form.append("source", source);
+    if (title.trim()) form.append("title", title.trim());
+    form.append("consent", "true");
+    return fetch("/api/uploads", { method: "POST", body: form }).then((r) => json<{ id: string }>(r));
+  },
+  uploadStatus: (id: string) => fetch(`/api/uploads/${enc(id)}`).then((r) => json<UploadStatus>(r)),
+  removeScene: (id: string) => fetch(`/api/clips/${enc(id)}`, { method: "DELETE" }).then((r) => json<{ ok: boolean }>(r)),
   /** "Was this score fair?" (only the numbers are sent; never audio). */
   feedback: (clip: string, line: number, r: ScoreResult, fair: boolean) => {
     const form = new FormData();

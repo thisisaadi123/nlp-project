@@ -1,7 +1,7 @@
 # Dub-Dub-Goose
 
 A dubbing game for Indian languages. Pick a movie scene, hear each line, then say it yourself in your
-language over the muted scene. You get a score out of 100 and a **Dub** (55+) or a **Goose**.
+language over the muted scene. You get a score out of 100 and a **Dub** (70+) or a **Goose**.
 
 Behind the game is a direct Indic-to-Indic dubbing pipeline that keeps context and emotion: it knows who
 is talking to whom, so Tamil *anni* becomes Hindi *bhabhi* (not "sister"), Hindi *bhai* between friends

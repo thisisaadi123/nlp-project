@@ -14,6 +14,9 @@ POST /api/calibrate                      form: audio -> the player's neutral-voi
 POST /api/score                          form: audio, clip, line, [baseline], [offset] -> score, parts, tips
 POST /api/premiere                       form: clip, starts {line: s}, takes (one file per line) -> mp4
 POST /api/feedback                       form: clip, line, score, parts, fair -> was the score fair? (no audio)
+POST /api/uploads                        form: video, target, [source], [title], consent -> a job id
+GET  /api/uploads/{job}                  the job's progress; when ready, the new scene's id
+DELETE /api/clips/{id}                   remove one of the player's own scenes
 
 The server keeps no sessions and stores no audio: /api/calibrate returns the player's baseline to
 the browser, which sends it back with each recording; uploads live only in temporary files.
@@ -28,6 +31,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 
+from backend.game import upload
 from backend.game.analyzer import get_analyzer
 from backend.game.library import Library
 from backend.game.play import calibrate, play, valid_baseline
@@ -151,6 +155,46 @@ def score_endpoint(audio: UploadFile = File(...), clip: str = Form(...), line: i
     if not result["ok"]:
         raise HTTPException(422, result["error"])
     return result
+
+
+@app.post("/api/uploads")
+def upload_endpoint(video: UploadFile = File(...), target: str = Form(...), source: str | None = Form(None),
+                    title: str | None = Form(None), consent: bool = Form(False)):
+    """Start turning the player's clip into a scene (see backend/game/upload.py)."""
+    if not consent:
+        raise HTTPException(400, "Please confirm the clip is family-friendly and yours to use.")
+    limit = config()["game"]["upload"]["max_mb"] * 2**20
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "upload.bin"
+        size = 0
+        with path.open("wb") as f:
+            while chunk := video.file.read(2**20):
+                size += len(chunk)
+                if size > limit:
+                    raise HTTPException(413, f"Clips must be under {config()['game']['upload']['max_mb']} MB.")
+                f.write(chunk)
+        try:
+            return {"id": upload.start(path, target, source or None, title)}
+        except upload.UploadError as e:
+            raise HTTPException(422, str(e))
+
+
+@app.get("/api/uploads/{job_id}")
+def upload_status(job_id: str):
+    try:
+        return upload.status(job_id)
+    except KeyError:
+        raise HTTPException(404, "No such upload.")
+
+
+@app.delete("/api/clips/{entry_id}")
+def delete_upload(entry_id: str):
+    _entry_or_404(entry_id)
+    try:
+        upload.remove(entry_id)
+    except KeyError:
+        raise HTTPException(403, "Only your own scenes can be removed.")
+    return {"ok": True}
 
 
 FEEDBACK = ROOT / "data/feedback/ratings.jsonl"

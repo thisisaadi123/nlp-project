@@ -9,6 +9,7 @@ import unicodedata
 
 import numpy as np
 
+from backend.game import words
 from backend.game.analyzer import ProsodyAnalyzer
 from backend.game.library import Reference
 from backend.roman import romanize
@@ -34,14 +35,6 @@ def _edit_distance(a: str, b: str) -> int:
             cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
         prev = cur
     return prev[-1]
-
-
-def content_similarity(heard: str, expected: str, lang: str) -> float:
-    """1 - character error rate between what was heard and the translated line, romanized."""
-    ref, hyp = _plain(expected, lang), _plain(heard, lang)
-    if not ref:
-        return 1.0
-    return max(0.0, 1.0 - _edit_distance(ref, hyp) / len(ref))
 
 
 def stressed_span(words: list[dict], targets: list[str], lang: str) -> tuple[float, float] | None:
@@ -105,11 +98,15 @@ def play(ref: Reference, y: np.ndarray, player_baseline: Baseline | None, analyz
         return {"ok": False, "error": NO_VOICE}
 
     lang = ref.target_language
-    content = content_similarity(a.text, ref.card["translation"], lang) if a.text is not None else None
+    checked = words.check(a.text, ref.card["translation"], lang) if a.text is not None else None
     wrong_language = wrong_language_heard(a, lang)
-    if wrong_language:
-        content = 0.0
+    content = 0.0 if wrong_language else checked["score"] if checked else None
     r = score_line(a.prosody, ref.prosody, ref.card, player_baseline, offset, content, ref.baseline)
+    if checked and "words" in r.parts and not wrong_language:
+        missed = sum(not w["ok"] for w in checked["words"])
+        part = r.parts["words"]
+        part.verdict = "every word" if not missed else f"{missed} word{'s' if missed > 1 else ''} off"
+        part.tip = words.tip(checked)
 
     # the weakest part's tip first: one thing to fix, not five
     advice = [p.tip for _, p in sorted(r.parts.items(), key=lambda kv: kv[1].score) if p.tip]
@@ -117,7 +114,8 @@ def play(ref: Reference, y: np.ndarray, player_baseline: Baseline | None, analyz
         names = config()["languages"]
         advice = [f"That sounded like {names[wrong_language]['name']}. Say the line in {names[lang]['name']}."] + advice[:2]
     elif content is not None and content < 0.6:
-        advice = [f"Say the line as written. We heard: “{a.text}”"] + advice[:2]
+        advice = [words.tip(checked) or f"Say the line as written. We heard: “{a.text}”"] + \
+            [t for t in advice if t != words.tip(checked)][:2]
     return {
         "ok": True,
         "score": r.score,
@@ -126,6 +124,7 @@ def play(ref: Reference, y: np.ndarray, player_baseline: Baseline | None, analyz
         "components": {k: round(100 * p.score) for k, p in r.parts.items()},
         "tips": advice,
         "heard": a.text,
+        "word_check": checked["words"] if checked and not wrong_language else None,
         "heard_roman": romanize(a.text, lang) if a.text else None,
         "duration": {"yours": round(a.prosody.duration, 2), "original": round(ref.prosody.duration, 2)},
         "analyzer": analyzer.name,

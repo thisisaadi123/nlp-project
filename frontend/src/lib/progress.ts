@@ -18,8 +18,8 @@ const write = (key: string, value: unknown) => {
 };
 
 /** Same line as config.yaml game.score.dub_threshold: from here on it's a Dub. */
-export const DUB_AT = 55;
-export const stars = (score: number) => (score >= 85 ? 3 : score >= 70 ? 2 : score >= DUB_AT ? 1 : 0);
+export const DUB_AT = 70;
+export const stars = (score: number) => (score >= 90 ? 3 : score >= 80 ? 2 : score >= DUB_AT ? 1 : 0);
 
 export interface LastPlayed {
   scene: string;

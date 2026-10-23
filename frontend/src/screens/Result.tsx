@@ -81,6 +81,21 @@ export function Result({ result, previous, takeUrl, originalUrl, isLast, onRetak
 
       {result.tips[0] && <p className="border-l-2 border-gold pl-4 text-lg text-paper/90">{result.tips[0]}</p>}
 
+      {result.word_check && result.word_check.some((w) => !w.ok) && (
+        <div className="flex flex-col gap-1">
+          <p className="font-mono text-[11px] tracking-[0.25em] text-dim">YOUR WORDS</p>
+          <p className="font-script text-xl leading-relaxed">
+            {result.word_check.map((w, i) => (
+              <span key={i} title={w.ok ? undefined : w.heard ? `we heard: ${w.heard}` : "skipped"}
+                className={clsx(w.ok ? "text-paper/80" : "text-goose underline decoration-wavy decoration-goose/70 underline-offset-4")}>
+                {w.word}{i < result.word_check!.length - 1 && " "}
+              </span>
+            ))}
+          </p>
+          {result.heard && <p className="text-sm text-dim">We heard: <span className="font-script text-paper/70">{result.heard}</span></p>}
+        </div>
+      )}
+
       {onRate && (
         <div className="flex items-center gap-3 text-sm text-dim">
           {rated === null ? (

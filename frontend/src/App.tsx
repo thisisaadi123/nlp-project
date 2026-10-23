@@ -8,6 +8,7 @@ import { progress } from "./lib/progress";
 import { isMuted, setMuted } from "./lib/sound";
 import { Booth, type Take } from "./screens/Booth";
 import { Briefing } from "./screens/Briefing";
+import { Upload } from "./screens/Upload";
 import { Home } from "./screens/Home";
 import { MicCheck } from "./screens/MicCheck";
 import { Reel } from "./screens/Reel";
@@ -19,7 +20,8 @@ type Screen =
   | { name: "mic"; entry: Entry; next: "briefing" | "booth"; index: number }
   | { name: "briefing"; entry: Entry }
   | { name: "booth"; entry: Entry; index: number }
-  | { name: "end"; entry: Entry };
+  | { name: "end"; entry: Entry }
+  | { name: "upload" };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: "home" });
@@ -126,8 +128,10 @@ export default function App() {
               onStart={() => setScreen({ name: "reel" })} onContinue={(scene) => open(scene, progress.last()?.line ?? 0)} />
           )}
           {screen.name === "reel" && lang && (
-            <Reel lang={lang} onPick={(s: Scene) => open(s.id, null)} onChangeLang={() => setLangMenu(true)} />
+            <Reel lang={lang} onPick={(s: Scene) => open(s.id, null)} onChangeLang={() => setLangMenu(true)}
+              onUpload={() => setScreen({ name: "upload" })} />
           )}
+          {screen.name === "upload" && lang && <Upload lang={lang} onPlay={(id) => open(id, null)} />}
           {screen.name === "mic" && (
             <MicCheck lang={screen.entry.target_language} onDone={() =>
               setScreen(screen.next === "briefing" ? { name: "briefing", entry: screen.entry } : { name: "booth", entry: screen.entry, index: screen.index })} />

@@ -87,6 +87,11 @@ scoring:
 
 game:
   library_dir: data/library
+  # Players' own clips (backend/game/upload.py): about ₹2.5-3 of Sarvam credits each
+  upload:
+    max_seconds: 45       # the built-in scenes are 28-40 s
+    max_mb: 80
+    daily_limit: 5
   # A spoken example of each dubbed line (Sarvam Bulbul, SARVAM_API_KEY), made once at library build.
   voice:
     enabled: true
@@ -96,7 +101,7 @@ game:
   # The game's score (backend/scoring/director.py): did the player follow the line's note?
   score:
     weights: {timing: 30, volume: 30, punch: 20, tone: 20, words: 20}
-    dub_threshold: 55     # 55-70 is a Dub; 70+ and 85+ earn more stars (frontend/src/lib/progress.ts)
+    dub_threshold: 70     # 70+ is a Dub; 80+ and 90+ earn more stars (frontend/src/lib/progress.ts)
   # "prosody": CPU only, no models (pitch, loudness, timing, stress, prosody arousal).
   # "cloud": prosody + Sarvam speech-to-text for the words (SARVAM_API_KEY; the take is sent to Sarvam).
   # "full": adds step 3's ASR (content score, word timings) and emotion2vec (needs the GPU stack).

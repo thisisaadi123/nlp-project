@@ -1,0 +1,158 @@
+{
+  "summary": "A young man is harshly turned away when asking his sister-in-law for college lab fees, but covers up for her by lying to his eldest brother that she generously gave him extra pocket money.",
+  "setting": "Inside a traditional ancestral home, transitioning from a bedroom to the central living hall.",
+  "has_music": true,
+  "speakers": [
+    {
+      "id": "S1",
+      "description": "Youngest brother wearing a blue shirt and trousers",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S2",
+      "description": "Sister-in-law (Anni) wearing a pink and white saree",
+      "gender": "female",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S3",
+      "description": "Eldest brother wearing a yellow checked shirt and veshti, ironing clothes",
+      "gender": "male",
+      "approx_age": "40s"
+    }
+  ],
+  "relationships": "S3 is the eldest brother and family patriarch; S1 is his youngest brother; S2 is S1's second sister-in-law (married to middle brother). S1 treats S3 with deep respect (annā) and S2 with polite deference (anni).",
+  "lines": [
+    {
+      "speaker": "S2",
+      "addressee": "S1",
+      "start": 0.0,
+      "end": 1.0,
+      "transcript": "உள்ள வை.",
+      "emotion": "angry",
+      "intensity": "medium",
+      "stressed_words": [
+        "உள்ள"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 1.0,
+      "end": 2.0,
+      "transcript": "சரி.",
+      "emotion": "calm",
+      "intensity": "low",
+      "stressed_words": [
+        "சரி"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 3.4,
+      "end": 6.8,
+      "transcript": "இப்ப கேக்குறேன்னுங்க, லேப் ஃபீஸ் கட்ட ஒரு அறுநூறு ரூபாய் பணம் கொடுங்க அண்ணி.",
+      "emotion": "neutral",
+      "intensity": "medium",
+      "stressed_words": [
+        "அறுநூறு ரூபாய்",
+        "அண்ணி"
+      ]
+    },
+    {
+      "speaker": "S2",
+      "addressee": "S1",
+      "start": 7.7,
+      "end": 10.3,
+      "transcript": "பணம் எல்லாம் கிடையாது, வெளிய போ.",
+      "emotion": "angry",
+      "intensity": "high",
+      "stressed_words": [
+        "கிடையாது",
+        "வெளிய போ"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 11.2,
+      "end": 12.5,
+      "transcript": "சரிங்க அண்ணி.",
+      "emotion": "sad",
+      "intensity": "low",
+      "stressed_words": [
+        "சரிங்க"
+      ]
+    },
+    {
+      "speaker": "S2",
+      "addressee": "S1",
+      "start": 12.8,
+      "end": 16.5,
+      "transcript": "ஏய்! இனிமே கேட்காம கொள்ளாம என் ரூமுக்குள்ள வரக்கூடாது.",
+      "emotion": "angry",
+      "intensity": "high",
+      "stressed_words": [
+        "இனிமே",
+        "வரக்கூடாது"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S1",
+      "start": 18.0,
+      "end": 22.8,
+      "transcript": "என்னைத் தெரியுமா... நான் சிரித்துப் பழகி கருத்தைக் கவரும்...",
+      "emotion": "happy",
+      "intensity": "low",
+      "stressed_words": [
+        "தெரியுமா"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S1",
+      "start": 22.9,
+      "end": 25.1,
+      "transcript": "என்னப்பா, தயங்கி தயங்கி போற?",
+      "emotion": "calm",
+      "intensity": "low",
+      "stressed_words": [
+        "தயங்கி"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S3",
+      "start": 25.3,
+      "end": 31.9,
+      "transcript": "அது ஒன்னும் இல்லைங்க அண்ணா. சின்ன அண்ணன் பாக்கெட்ல இருந்து ஒரு அறுநூறு ரூபாய் பணம் எடுத்தேன். நம்ம அண்ணி இல்ல, கூட இருநூறு ரூபாய் கொடுத்து பாக்கெட் மணியா வச்சுக்கன்னு சொன்னாங்க.",
+      "emotion": "happy",
+      "intensity": "medium",
+      "stressed_words": [
+        "ஒன்னும் இல்லைங்க",
+        "கூட",
+        "இருநூறு ரூபாய்"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S1",
+      "start": 32.2,
+      "end": 34.0,
+      "transcript": "ஹும், அதான் அத்தை பொண்ணா இருந்தா...",
+      "emotion": "happy",
+      "intensity": "low",
+      "stressed_words": [
+        "அத்தை பொண்ணா"
+      ]
+    }
+  ],
+  "overall_emotion": "comic",
+  "register_note": "S1 addresses S2 respectfully as 'Anni' (bhabhi) and S3 as 'Anna' (bhaiya) with deferential suffixes '-nga' (சரிங்க, இல்லைங்க). S2 dismisses S1 harshly using the imperative singular 'வெளிய போ' and 'ஏய்'. S3 addresses S1 affectionately as 'ப்பா' (short for thambi/kanna).",
+  "expected_translation_notes": "In Hindi, S1 addresses S2 as 'Bhabhiji' and S3 as 'Bhaiya/Bade Bhaiya' with 'aap'. S2 speaks down with 'tu/nikal yahan se'. S3 speaks affectionately to S1 using 'kya re / beta / chhotu'.",
+  "confidence": "high",
+  "_status": "draft from Gemini; check every field, then set verified=yes in testset.csv"
+}

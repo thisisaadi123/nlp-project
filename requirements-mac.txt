@@ -19,3 +19,11 @@ python-multipart>=0.0.9
 
 # test set tooling
 yt-dlp
+
+# step 4: draft translation (IndicTrans2 on CPU), keyframes, tests
+torch
+transformers>=4.46,<5     # IndicTrans2's model code breaks on transformers 5
+sentencepiece
+IndicTransToolkit
+pillow
+pytest

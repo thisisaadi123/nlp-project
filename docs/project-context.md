@@ -106,6 +106,11 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 - Prosody measures *intensity* (arousal) across speakers (83% on unseen actors) but cannot tell angry from
   happy; emotion2vec has to supply which emotion. A per-speaker neutral baseline helps, so players record
   one calibration sentence. Details: `docs/reports/step2.md`.
+- gpt-oss-120b's free tier allows 200,000 tokens per day: about 5–8 new clips per day. Process each
+  clip once and cache it; the live game loop must not call it. gpt-oss-20b (backup) keeps the
+  pipeline running but its dubs are not usable quality. Details: `docs/reports/step4.md`.
+- Step 4 pins `transformers<5` (IndicTrans2's model code breaks on 5). If the Omen's speech stack
+  needs transformers 5, run IndicTrans2 in its own environment there.
 - TTS models can read the style instruction aloud ("Say angrily…") with no error. Verify synthetic audio
   with ASR before using it. Gemini TTS free tier allows ~10 requests per model per day.
 
@@ -117,7 +122,7 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 | 1. Test set | Ground truth for step 3 comes from datasets (see Data). Movie clips (3 per language, tooling ready) are needed by step 4 for register and real scenes; Aadi. |
 | 2. Prosody + scoring core (Mac) | **done** (see `docs/reports/step2.md`); threshold and weights calibrated in step 6 |
 | 3. Speech branch on the Omen | ready to start (Omen) |
-| 4. Visual branch + context + translation | after step 2 |
+| 4. Visual branch + context + translation | **done** on the Mac, adapted to step 3's output (see `docs/reports/step4.md`). Open: run on step 3's real output for the 4 clips, on gpt-oss-120b |
 | 5. Delivery card + TTS + game loop (MVP) | — |
 | 6. Train + calibrate (Colab) | — |
 | 7. Polish + demo | — |

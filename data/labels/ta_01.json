@@ -1,0 +1,150 @@
+{
+  "summary": "Kathir spots his long-lost elder brother Murugesan on the street, proudly introduces him to his friend, and tries emotionally to persuade him to come home.",
+  "setting": "Busy outdoor street/market area",
+  "has_music": true,
+  "speakers": [
+    {
+      "id": "S1",
+      "description": "Kathir, younger brother in a white striped shirt",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S2",
+      "description": "Murugesan, older brother with a dark beard and bruised face in a light brown shirt",
+      "gender": "male",
+      "approx_age": "30s"
+    },
+    {
+      "id": "S3",
+      "description": "Velmurugan, Kathir's friend standing nearby in a yellow shirt",
+      "gender": "male",
+      "approx_age": "20s"
+    }
+  ],
+  "relationships": "Murugesan (S2) is the elder brother, Kathir (S1) is the younger brother; Velmurugan (S3) is Kathir's close friend.",
+  "lines": [
+    {
+      "speaker": "S1",
+      "addressee": "S3",
+      "start": 7.5,
+      "end": 12.0,
+      "transcript": "ஏய் பங்காளி! இதுதான்டா என் அண்ணன், முருகேசன் அண்ணன். சொல்லிருக்கேன்ல?",
+      "emotion": "happy",
+      "intensity": "medium",
+      "stressed_words": [
+        "பங்காளி",
+        "அண்ணன்",
+        "சொல்லிருக்கேன்ல"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 12.3,
+      "end": 14.3,
+      "transcript": "அண்ணே, இவன்தானே என் பிரெண்டு வேல்முருகன்.",
+      "emotion": "happy",
+      "intensity": "low",
+      "stressed_words": [
+        "அண்ணே",
+        "பிரெண்டு"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S2",
+      "start": 14.5,
+      "end": 15.5,
+      "transcript": "வணக்கம் அண்ணே.",
+      "emotion": "calm",
+      "intensity": "low",
+      "stressed_words": [
+        "வணக்கம்"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 15.6,
+      "end": 17.5,
+      "transcript": "வாங்கண்ணே வீட்டுக்குப் போலாம்.",
+      "emotion": "happy",
+      "intensity": "medium",
+      "stressed_words": [
+        "வாங்கண்ணே",
+        "வீட்டுக்கு"
+      ]
+    },
+    {
+      "speaker": "S2",
+      "addressee": "S1",
+      "start": 17.8,
+      "end": 19.4,
+      "transcript": "நான் கெளம்புறேன்டா.",
+      "emotion": "sad",
+      "intensity": "medium",
+      "stressed_words": [
+        "கெளம்புறேன்டா"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 19.5,
+      "end": 23.2,
+      "transcript": "உன்ன பாத்தா அம்மா எவ்ளோ சந்தோஷப்படுவாங்க தெரியுமா? திரும்ப கிடைச்சிட்டேனே, வாங்கண்ணே.",
+      "emotion": "happy",
+      "intensity": "medium",
+      "stressed_words": [
+        "அம்மா",
+        "சந்தோஷப்படுவாங்க",
+        "வாங்கண்ணே"
+      ]
+    },
+    {
+      "speaker": "S2",
+      "addressee": "S1",
+      "start": 23.5,
+      "end": 29.0,
+      "transcript": "வேலையா வந்தேன். இன்னொரு வாட்டி வரேன்டா. நான்... கெளம்புறேன்டா.",
+      "emotion": "sad",
+      "intensity": "high",
+      "stressed_words": [
+        "வேலையா",
+        "இன்னொரு வாட்டி",
+        "கெளம்புறேன்டா"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 29.2,
+      "end": 30.5,
+      "transcript": "அண்ணே...",
+      "emotion": "sad",
+      "intensity": "low",
+      "stressed_words": [
+        "அண்ணே"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 32.4,
+      "end": 34.2,
+      "transcript": "வீட்டுக்குப் போனியா?",
+      "emotion": "sad",
+      "intensity": "medium",
+      "stressed_words": [
+        "வீட்டுக்கு",
+        "போனியா"
+      ]
+    }
+  ],
+  "overall_emotion": "sad",
+  "register_note": "Kathir uses respectful address forms 'அண்ணே' (annae - elder brother) and polite plural imperatives 'வாங்கண்ணே' (vaangannae), while Murugesan replies with intimate/informal suffix '-டா' (-da) appropriate for a younger brother. Kathir addresses his peer friend affectionately as 'பங்காளி' (pangali).",
+  "expected_translation_notes": "Kathir's address to Murugesan should map to 'Bhaiya' (Hindi), 'Dada' (Bengali/Marathi), or 'Annayya' (Telugu) paired with honorific plural verbs (aaiye/banni/randi), while Murugesan addresses Kathir informally (tu/chal/jaata hoon). 'Pangali' maps to intimate peer slang like 'yaar' or 'dost'.",
+  "confidence": "high",
+  "_status": "draft from Gemini; check every field, then set verified=yes in testset.csv"
+}

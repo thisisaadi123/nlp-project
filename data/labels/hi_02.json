@@ -1,0 +1,185 @@
+{
+  "summary": "Ram arrives at a dockside gathering where his friends playfully interrogate him about his night, and he poetically hints at his rendezvous with Leela.",
+  "setting": "A boat/harbor dock gathering area in Gujarat, filled with men drinking and relaxing.",
+  "has_music": true,
+  "speakers": [
+    {
+      "id": "S1",
+      "description": "Friend watching Ram dismount his bike",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S2",
+      "description": "Kanji, Ram's close friend seated wearing a white traditional outfit and pagdi",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S3",
+      "description": "Ram (Ranveer Singh), wearing a colorful floral shirt, sunglasses, and jewelry",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S4",
+      "description": "Friend sitting in the group teasing Ram",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S5",
+      "description": "Another friend inquiring about the girl in Gujarati-accented Hindi",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S6",
+      "description": "Friend sitting with a microphone teasingly questioning in English-Hindi mix",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S7",
+      "description": "Man walking past greeting Kanji from a distance",
+      "gender": "male",
+      "approx_age": "30s"
+    }
+  ],
+  "relationships": "Close male friends and gang members teasing each other as equals with playful banter; Ram is their charismatic leader/peer.",
+  "lines": [
+    {
+      "speaker": "S1",
+      "addressee": "S2",
+      "start": 0.0,
+      "end": 2.8,
+      "transcript": "अरे साक्षात कामदेव चले आ रहे हैं।",
+      "emotion": "comic",
+      "intensity": "medium",
+      "stressed_words": [
+        "साक्षात",
+        "कामदेव"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S3",
+      "start": 2.9,
+      "end": 6.2,
+      "transcript": "अभी क्या-क्या किस्से सुनाएंगे यार। आजा बेटा आजा आजा।",
+      "emotion": "happy",
+      "intensity": "medium",
+      "stressed_words": [
+        "किस्से",
+        "आजा"
+      ]
+    },
+    {
+      "speaker": "S2",
+      "addressee": "S3",
+      "start": 7.4,
+      "end": 10.1,
+      "transcript": "राम भाई, रात कैसी कटी, हां?",
+      "emotion": "comic",
+      "intensity": "medium",
+      "stressed_words": [
+        "रात",
+        "कैसी"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S2",
+      "start": 10.9,
+      "end": 13.1,
+      "transcript": "फुल नाइट पेड़ के नीचे खड़ा था।",
+      "emotion": "calm",
+      "intensity": "medium",
+      "stressed_words": [
+        "फुल",
+        "नाइट",
+        "खड़ा"
+      ]
+    },
+    {
+      "speaker": "S4",
+      "addressee": "S3",
+      "start": 13.3,
+      "end": 15.0,
+      "transcript": "खड़ा नहीं, पड़ा था।",
+      "emotion": "comic",
+      "intensity": "medium",
+      "stressed_words": [
+        "पड़ा"
+      ]
+    },
+    {
+      "speaker": "S5",
+      "addressee": "S3",
+      "start": 15.2,
+      "end": 16.9,
+      "transcript": "सही-सही बताओ छोकरी कौन छे?",
+      "emotion": "comic",
+      "intensity": "medium",
+      "stressed_words": [
+        "सही-सही",
+        "छोकरी"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S2",
+      "start": 17.1,
+      "end": 21.0,
+      "transcript": "नेम तो कमाल छे, पर सरनेम बवाल छे।",
+      "emotion": "comic",
+      "intensity": "high",
+      "stressed_words": [
+        "कमाल",
+        "बवाल"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S2",
+      "start": 23.8,
+      "end": 28.0,
+      "transcript": "आज रात इंडिया टीवी देख लेना। रणजार का हिस्ट्री बदलने वाला है।",
+      "emotion": "happy",
+      "intensity": "high",
+      "stressed_words": [
+        "इंडिया टीवी",
+        "हिस्ट्री"
+      ]
+    },
+    {
+      "speaker": "S6",
+      "addressee": "S3",
+      "start": 29.3,
+      "end": 31.4,
+      "transcript": "हेलो, व्हॉट इज़ दिस लफ़ड़ा?",
+      "emotion": "comic",
+      "intensity": "low",
+      "stressed_words": [
+        "लफ़ड़ा"
+      ]
+    },
+    {
+      "speaker": "S7",
+      "addressee": "S2",
+      "start": 32.2,
+      "end": 34.0,
+      "transcript": "केम छो कानजी भाई?",
+      "emotion": "neutral",
+      "intensity": "medium",
+      "stressed_words": [
+        "कानजी भाई"
+      ]
+    }
+  ],
+  "overall_emotion": "comic",
+  "register_note": "Colloquial Gujarati Hindi blend ('छोकरी कौन छे', 'कमाल छे', 'बवाल छे') with fraternal terms of endearment and respect ('राम भाई', 'कानजी भाई', 'बेटा', 'यार').",
+  "expected_translation_notes": "Use informal peer forms (machan/thambi in Tamil, macha/bava in Telugu, bhau/dost in Marathi). Gujarati markers like 'छे' should map to playful localized tag words or colloquial copulas.",
+  "confidence": "high",
+  "_status": "draft from Gemini; check every field, then set verified=yes in testset.csv"
+}

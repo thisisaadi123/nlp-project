@@ -28,9 +28,15 @@ llm:
   # gpt-oss-120b kept bhai/bhaiya register apart in Tamil; qwen3.8 collapsed both to "bro",
   # so qwen is used only for image captioning.
   text_model: openai/gpt-oss-120b
+  text_backup_model: openai/gpt-oss-20b   # own daily quota; lower quality, used when 120b is out
   vision_model: qwen/qwen3.8-27b
   vision_max_tokens: 800     # qwen's free tier has a low output-tokens-per-minute cap
+  # "high" fixed register and grammar errors that "medium" made (e.g. "summa iru" for "chup kar"); ~7 s per clip
+  translate_effort: high
   temperature: 0.3
+  # Groq free tier: input + max_tokens of one request must fit in this per-minute budget
+  groq_tokens_per_minute: 8000
+  translate_batch: 3         # lines per translation call (keeps each request inside the budget)
   fallback_provider: gemini
   fallback_model: gemini-flash-latest
 

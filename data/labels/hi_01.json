@@ -1,0 +1,230 @@
+{
+  "summary": "Bhushan confronts an arrogant group of village youths led by Bablu during a tense standoff in an open village field.",
+  "setting": "Village outdoors, dirt clearing",
+  "has_music": true,
+  "speakers": [
+    {
+      "id": "S1",
+      "description": "Villager wearing sunglasses and a headscarf, holding a rifle",
+      "gender": "male",
+      "approx_age": "30s"
+    },
+    {
+      "id": "S2",
+      "description": "Abhishek (Sachiv ji), young panchayat secretary in a grey Henley shirt",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S3",
+      "description": "Bablu, cocky leader of the youth gang in a multi-colored button-up shirt",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S4",
+      "description": "Bhushan (Banrakas), an outspoken middle-aged villager in a checkered shirt and sunglasses",
+      "gender": "male",
+      "approx_age": "50s"
+    },
+    {
+      "id": "S5",
+      "description": "Gang member in a green t-shirt with a checkered muffler",
+      "gender": "male",
+      "approx_age": "20s"
+    },
+    {
+      "id": "S6",
+      "description": "Gang member in a red-and-blue plaid shirt",
+      "gender": "male",
+      "approx_age": "20s"
+    }
+  ],
+  "relationships": "Bhushan and his fellow villagers are confronting a defiant rival group of younger village men (Bablu and friends). Bhushan is senior in age.",
+  "lines": [
+    {
+      "speaker": "S1",
+      "addressee": "S4",
+      "start": 0.0,
+      "end": 2.2,
+      "transcript": "हां चलाइए, चलाइए ना।",
+      "emotion": "angry",
+      "intensity": "medium",
+      "stressed_words": [
+        "चलाइए"
+      ]
+    },
+    {
+      "speaker": "S2",
+      "addressee": "S4",
+      "start": 2.0,
+      "end": 2.8,
+      "transcript": "चला, चला।",
+      "emotion": "calm",
+      "intensity": "low",
+      "stressed_words": [
+        "चला"
+      ]
+    },
+    {
+      "speaker": "S1",
+      "addressee": "S4",
+      "start": 2.7,
+      "end": 3.7,
+      "transcript": "चलाई, चलाइए।",
+      "emotion": "angry",
+      "intensity": "medium",
+      "stressed_words": [
+        "चलाइए"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S4",
+      "start": 4.1,
+      "end": 6.3,
+      "transcript": "अब तो बेटा तुम दोनों का कच्छा भी उतारेंगे हम, ऐ!",
+      "emotion": "angry",
+      "intensity": "high",
+      "stressed_words": [
+        "बेटा",
+        "कच्छा",
+        "उतारेंगे"
+      ]
+    },
+    {
+      "speaker": "S4",
+      "addressee": "S3",
+      "start": 6.1,
+      "end": 8.7,
+      "transcript": "भाई, भाई, भाई, ऐ! भाई! ए बबलू कौन है रे?",
+      "emotion": "angry",
+      "intensity": "high",
+      "stressed_words": [
+        "बबलू",
+        "कौन"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S4",
+      "start": 8.9,
+      "end": 10.3,
+      "transcript": "हम हैं बबलू।",
+      "emotion": "neutral",
+      "intensity": "medium",
+      "stressed_words": [
+        "हम",
+        "बबलू"
+      ]
+    },
+    {
+      "speaker": "S4",
+      "addressee": "S3",
+      "start": 10.3,
+      "end": 11.2,
+      "transcript": "तू बबलू है?",
+      "emotion": "surprised",
+      "intensity": "low",
+      "stressed_words": [
+        "तू"
+      ]
+    },
+    {
+      "speaker": "S4",
+      "addressee": "S3",
+      "start": 11.3,
+      "end": 12.4,
+      "transcript": "हं? तुम्हारे बाप का क्या नाम है?",
+      "emotion": "angry",
+      "intensity": "medium",
+      "stressed_words": [
+        "बाप",
+        "नाम"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S4",
+      "start": 12.5,
+      "end": 13.5,
+      "transcript": "जगमोहन।",
+      "emotion": "neutral",
+      "intensity": "low",
+      "stressed_words": [
+        "जगमोहन"
+      ]
+    },
+    {
+      "speaker": "S4",
+      "addressee": "S3",
+      "start": 13.6,
+      "end": 14.8,
+      "transcript": "और कौन से गांव का है रे?",
+      "emotion": "angry",
+      "intensity": "medium",
+      "stressed_words": [
+        "गांव",
+        "रे"
+      ]
+    },
+    {
+      "speaker": "S3",
+      "addressee": "S4",
+      "start": 14.9,
+      "end": 16.5,
+      "transcript": "काहे, आधार कार्ड बनाएंगे का?",
+      "emotion": "sarcastic",
+      "intensity": "high",
+      "stressed_words": [
+        "आधार कार्ड",
+        "बनाएंगे"
+      ]
+    },
+    {
+      "speaker": "S4",
+      "addressee": "S3",
+      "start": 18.0,
+      "end": 22.0,
+      "transcript": "आधार कार्ड नहीं बेटा, एक रहपट में हम सुधार कार्ड बना देंगे तुम्हारा!",
+      "emotion": "angry",
+      "intensity": "high",
+      "stressed_words": [
+        "आधार कार्ड",
+        "रहपट",
+        "सुधार कार्ड"
+      ]
+    },
+    {
+      "speaker": "S5",
+      "addressee": "S4",
+      "start": 22.1,
+      "end": 23.3,
+      "transcript": "ये बुड्ढा मरेगा आज!",
+      "emotion": "angry",
+      "intensity": "medium",
+      "stressed_words": [
+        "बुड्ढा",
+        "मरेगा"
+      ]
+    },
+    {
+      "speaker": "S6",
+      "addressee": "S4",
+      "start": 23.4,
+      "end": 25.9,
+      "transcript": "अरे ओ चाचा! ये वृद्धाश्रम जाने...",
+      "emotion": "comic",
+      "intensity": "medium",
+      "stressed_words": [
+        "चाचा",
+        "वृद्धाश्रम"
+      ]
+    }
+  ],
+  "overall_emotion": "comic",
+  "register_note": "S4 addresses the young man dismissively with 'तू' (tu) and 'रे' (re) asserting seniority and dominance, while using sarcastic 'बेटा' (beta). Bablu retorts with cheeky sarcasm ('काहे आधार कार्ड बनाएंगे का?') and his gang disrespectfully calls Bhushan 'बुड्ढा' and mockingly 'चाचा'.",
+  "expected_translation_notes": "Maintain colloquial and dismissive second-person pronouns across target languages (e.g., Tamil 'nee/da', Telugu 'nuvvu/ra', Marathi 'tu/re', Bengali 'tui'). The wordplay between 'Aadhaar Card' and 'Sudhaar Card' (reform/correction card) should be translated literally or with equivalent punning where feasible.",
+  "confidence": "high",
+  "_status": "draft from Gemini; check every field, then set verified=yes in testset.csv"
+}

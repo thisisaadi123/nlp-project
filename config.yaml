@@ -14,6 +14,13 @@ clip:
   sample_rate: 16000
   keyframe_fps: 1.5          # plus extra frames at scene changes
 
+speech:
+  # Demucs helps when music is present (WER 45->39% at 0 dB, DER 17->12% at -5 dB) but slightly
+  # hurts clean speech (WER 16->18%). "auto": run it, keep its vocals only if it removed music
+  # at least this loud relative to the speech (docs/reports/step3.md).
+  demucs: auto               # auto | on | off
+  demucs_min_music_db: -20
+
 models:
   separation: htdemucs
   diarization: pyannote/speaker-diarization-3.1
@@ -41,7 +48,7 @@ llm:
 
 # Models kept in VRAM for the live game loop; everything else is loaded on demand.
 vram:
-  resident: [asr, emotion]
+  resident: [asr, emotion, aligner]
   on_demand: [separation, diarization, translation_draft, tts]
 
 scoring:

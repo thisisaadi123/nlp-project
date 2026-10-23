@@ -29,10 +29,13 @@ class EmotionResult:
 class Emotion:
     def __init__(self, device: str = "cuda"):
         from funasr import AutoModel
-        with contextlib.redirect_stdout(io.StringIO()):           # funasr prints every weight it maps
+        root = logging.getLogger()
+        level = root.level
+        root.setLevel(logging.WARNING)                             # funasr logs every weight it maps...
+        with contextlib.redirect_stdout(io.StringIO()):            # ...and prints the missing ones
             self.model = AutoModel(model=config()["models"]["emotion"], hub="hf", device=f"{device}:0"
-                                   if device == "cuda" else device, disable_update=True)
-        logging.getLogger().setLevel(logging.WARNING)
+                                   if device == "cuda" else device, disable_update=True, log_level="ERROR")
+        root.setLevel(level)
 
     def __call__(self, y: np.ndarray) -> EmotionResult:
         r = self.model.generate(np.ascontiguousarray(y, dtype=np.float32), granularity="utterance",

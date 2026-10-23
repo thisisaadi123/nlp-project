@@ -12,30 +12,35 @@ becomes Tamil *machan* (not *anna*), and lines come out the way people talk, not
 ## How it works
 
 ```
-movie clip ──► step 3: speech analysis ──► step 4: context + translation ──► game library ──► the game
-               who spoke when, words,       scene context (video captions      cards, voice      listen, say it,
-               pitch/loudness, emotion      + dialogue), Sarvam draft,         lines, reference  get scored
-                                            translation with checks            prosody
+movie clip ─► step 3: speech analysis ─► step 4: context + translation ─► step 5: the game
+              who spoke when, words,      video captions, scene context,     library build (cards,
+              pitch/loudness, emotion     Sarvam draft, translation,         voice lines, reference
+                                          review, checks in code             prosody), then play
 ```
 
-**Translation (step 4).** Sarvam does the language work; code checks what models get wrong:
+(Steps 0–1 were setup and the test clips; step 2 built the prosody measurements the score uses.)
 
-1. *Draft:* Sarvam Mayura in spoken ("modern-colloquial") mode. IndicTrans2 is the offline fallback.
+**Step 4, in the order the code runs it** (`backend/pipeline/dub.py`, `translate/refine.py`):
+
+1. *Video captions:* a vision model describes key frames (Groq).
 2. *Scene context:* who the characters are, how they are related, who each line is said to.
-3. *Translation:* Sarvam's chat model writes each line from its meaning, in the target language's spoken
-   style (a style guide per language), with the speaker's and listener's gender.
-4. *Review:* the same model re-reads the whole scene as a native dialogue writer.
-5. *Checks in code,* each followed by a targeted repair that is only accepted if it fixes the problem:
-   - **family words** (`translate/kinship.py`): the source's relation must come out as the target's word
-     (anni → bhabhi / vadina / boudi / vahini);
-   - **written-style words** (`translate/written.py`): forms people read but never say (Tamil
-     பார்க்கவும், போகிறது; Hindi कृपया);
-   - **copied words** (`translate/copies.py`): source words left in the target script instead of being
-     translated (Tamil கெளம்புறேன்டா once came out as Hindi "गुम्बुरेंटा").
-6. *Fit:* lines that run much longer than the actor's line are shortened.
-7. *Romanization* for players who speak the language but can't read its script, checked word by word.
+3. *Emotion intent:* each line's emotion and intensity, from the context and the voice.
+4. *Draft:* Sarvam Mayura in spoken ("modern-colloquial") mode, given each speaker's gender.
+   IndicTrans2 is the offline fallback.
+5. *Translation:* Sarvam's chat model writes each line from its meaning, in the target language's
+   spoken style (a style guide per language), with the speaker's and listener's gender.
+6. *Review:* the same model re-reads the whole scene as a native dialogue writer.
+7. *Checks in code,* each followed by a targeted repair that is only accepted if it fixes the problem:
+   1. **family words** (`translate/kinship.py`): the source's relation must come out as the target's word
+      (anni → bhabhi / vadina / boudi / vahini);
+   2. **written-style words** (`translate/written.py`): forms people read but never say (Tamil
+      பார்க்கவும், போகிறது; Hindi कृपया);
+   3. **copied words** (`translate/copies.py`): source words left in the target script instead of being
+      translated (Tamil கெளம்புறேன்டா once came out as Hindi "गुम्बुरेंटा").
+8. *Fit:* lines that run much longer than the actor's line are shortened.
+9. *Romanization* for players who speak the language but can't read its script, checked word by word.
 
-**Scoring (`backend/scoring/director.py`).** Each take is checked against what the screen asked for:
+**Step 5: scoring a take (`backend/scoring/director.py`).** Each take is checked against what the screen asked for:
 
 | Part | What it checks |
 |---|---|

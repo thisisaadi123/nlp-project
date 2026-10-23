@@ -83,7 +83,8 @@ inside the finished app (used for step 6 calibration, with consent). Ground trut
 |---|---|---|
 | Music removal | Demucs (htdemucs) | Omen GPU |
 | Diarization | pyannote/speaker-diarization-3.1 | Omen GPU |
-| ASR | ai4bharat/indic-conformer-600m-multilingual | Omen GPU |
+| ASR | ai4bharat/indic-conformer-600m-multilingual (ONNX, CTC) | Omen GPU |
+| Word timings | Vakyansh wav2vec2 CTC per language (hi, ta; MIT); IndicConformer CTC fallback | Omen GPU |
 | Prosody | Parselmouth + librosa | CPU |
 | Speech emotion | emotion2vec (to be fine-tuned on Indic data in Colab) | Omen GPU |
 | Translation draft | ai4bharat/indictrans2-indic-indic-dist-320M | Omen GPU |
@@ -92,7 +93,8 @@ inside the finished app (used for step 6 calibration, with consent). Ground trut
 | Reference TTS | ai4bharat/indic-parler-tts | Omen GPU |
 | Backup LLM | Gemini `gemini-flash-latest` | Google |
 
-VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time and unload.
+VRAM plan for 8 GB: ASR + emotion + the target language's aligner stay resident (3.4 GB); the others
+load one at a time and unload.
 
 ## Findings so far
 
@@ -101,8 +103,21 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
   image captioning.
 - `gpt-oss-120b` is a reasoning model: it spends output tokens thinking, so never set a tiny `max_tokens`.
 - Qwen's free tier has a low output-tokens-per-minute cap; keep captioning calls short (`vision_max_tokens`).
-- MMS forced-aligner weights are non-commercial (CC-BY-NC), so word timestamps come from IndicConformer's CTC output.
-- emotion2vec is trained mostly on English/Chinese speech; its accuracy on Indic speech must be checked in step 3.
+- MMS forced-aligner weights are non-commercial (CC-BY-NC). IndicConformer's own CTC timings are ~200 ms
+  off (its output isn't peaky), so a small character-level wav2vec2 aligner (Vakyansh, MIT) places the
+  words: line edges ~20 ms, 62-68% of word boundaries within 100 ms. Details: `docs/reports/step3.md`.
+- **emotion2vec tells how intense a line is, not which emotion** on Indic speech (Rasa): 7-way accuracy
+  38% Hindi / 35% Tamil (it calls most angry, disgust and surprise lines "happy"), but high vs low
+  arousal 82% (AUC 0.85 / 0.81). The emotion score should rest on intensity until it's fine-tuned; the
+  card's emotion label should come from context. Our RAVDESS arousal model ranks Indic speech right but
+  is mis-calibrated (AUC 0.77 / 0.69 with a speaker baseline).
+- ASR writes spoken Tamil in formal spelling (*illa* -> *illai*); compare characters or romanized text
+  for the content score, not exact words. Hindi FLEURS WER 12%, Tamil 27% (CER 5% / 10%).
+- Demucs helps only when there is music (WER 45 -> 39% at 0 dB) and slightly hurts clean speech, so it
+  runs in auto mode. Diarization gets 95% of lines' speakers right on generated two-speaker scenes.
+- Rasa's dataset card says **CC BY 4.0**, not CC BY-ND; step 3 used it for evaluation only. Whether it may
+  be used for training (step 6) is a team decision.
+- Indic Parler-TTS lists only female Tamil voices; "Arjun" speaks Tamil clearly as the male voice.
 - Prosody measures *intensity* (arousal) across speakers (83% on unseen actors) but cannot tell angry from
   happy; emotion2vec has to supply which emotion. A per-speaker neutral baseline helps, so players record
   one calibration sentence. Details: `docs/reports/step2.md`.
@@ -116,7 +131,7 @@ VRAM plan for 8 GB: ASR + emotion stay resident; the others load one at a time a
 | 0. Setup | **Mac done** (all checks pass). **Omen done** (all checks pass; see `docs/reports/omen-step0.md`). |
 | 1. Test set | Ground truth for step 3 comes from datasets (see Data). Movie clips (3 per language, tooling ready) are needed by step 4 for register and real scenes; Aadi. |
 | 2. Prosody + scoring core (Mac) | **done** (see `docs/reports/step2.md`); threshold and weights calibrated in step 6 |
-| 3. Speech branch on the Omen | ready to start (Omen) |
+| 3. Speech branch on the Omen | **done** (see `docs/reports/step3.md`): clip -> JSON in ~7.5 s for 36 s; live loop 0.13 s. Open: listening check of word timings; emotion fine-tune (step 6) |
 | 4. Visual branch + context + translation | after step 2 |
 | 5. Delivery card + TTS + game loop (MVP) | — |
 | 6. Train + calibrate (Colab) | — |

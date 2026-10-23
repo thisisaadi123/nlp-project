@@ -61,9 +61,12 @@ def score(truth: dict, out: dict) -> dict:
             refs.append(normalize(t["text"])); hyps.append(normalize(h["text"]) if h else "-")
         if best is None or right > best[0]:
             best = (right, refs, hyps)
-    right, refs, hyps = best
-    return {"lines_true": len(truth["lines"]), "lines_found": len(hyp), "speaker_right": right,
-            "refs": refs, "hyps": hyps}
+    # text is scored per scene on all lines in time order, so a diarization merge or split doesn't
+    # count words twice or drop them; speaker errors are counted separately above
+    ref_text = " ".join(normalize(t["text"]) for t in truth["lines"])
+    hyp_text = " ".join(normalize(h["text"]) for h in sorted(hyp, key=lambda h: h["start"])) or "-"
+    return {"lines_true": len(truth["lines"]), "lines_found": len(hyp), "speaker_right": best[0],
+            "refs": [ref_text], "hyps": [hyp_text]}
 
 
 def main():
@@ -74,14 +77,23 @@ def main():
     base = vram_used_gb()
     t = time.time()
     models = Models()
+    print(f"resident ASR + emotion: {vram_used_gb() - base:.2f} GB (over {base:.2f} GB already in use)")
     for lang in args.lang:
         models.aligner(lang)
-    resident = vram_used_gb() - base
-    print(f"resident models (ASR + emotion + aligners {args.lang}): {resident:.2f} GB over the "
-          f"{base:.2f} GB already in use; loaded in {time.time() - t:.0f} s")
+        print(f"  + aligner {lang}: {vram_used_gb() - base:.2f} GB")
+    print(f"loaded in {time.time() - t:.0f} s")
 
-    scenes = sorted(f for f in SCENES.glob("*.json") if json.loads(f.read_text(encoding="utf-8"))["lang"] in args.lang)
-    print(f"\n{'audio':8} {'lines found':>12} {'speaker right':>14} {'WER':>6} {'CER':>6} {'Demucs on':>10} {'music est.':>11}")
+    results = {}
+    for lang in args.lang:
+        scenes = sorted(f for f in SCENES.glob(f"{lang}_*.json"))
+        print(f"\n{lang}: {'audio':8} {'lines found':>12} {'speaker right':>14} {'WER':>6} {'CER':>6} "
+              f"{'Demucs on':>10} {'music est.':>11}")
+        results[lang] = run_variants(models, scenes)
+    timing_tests(models, args.lang)
+    (ROOT / "data/cache/eval_pipeline.json").write_text(json.dumps(results, indent=1))
+
+
+def run_variants(models, scenes) -> dict:
     results = {}
     for variant in ["clean", "m-10", "m-5", "m0"]:
         agg = {"lines_true": 0, "lines_found": 0, "speaker_right": 0}; refs, hyps = [], []; demucs_on = 0; mus = []
@@ -96,11 +108,14 @@ def main():
         n = agg["lines_true"]
         wer, cer = jiwer.wer(refs, hyps), jiwer.cer(refs, hyps)
         results[variant] = {**agg, "wer": wer, "cer": cer, "demucs_on": demucs_on, "music_db_median": float(np.median(mus))}
-        print(f"{variant:8} {agg['lines_found']:5d} / {n:<5d} {agg['speaker_right'] * 100 / n:12.0f}% {wer * 100:5.1f}% "
+        print(f"    {variant:8} {agg['lines_found']:5d} / {n:<5d} {agg['speaker_right'] * 100 / n:12.0f}% {wer * 100:5.1f}% "
               f"{cer * 100:5.1f}% {demucs_on:5d}/{len(scenes):<4d} {np.median(mus):8.1f} dB")
+    return results
 
+
+def timing_tests(models, langs):
     # ~30 s clip: three scenes of one language back to back, with music at -10 dB
-    lang = args.lang[0]
+    lang = langs[0]
     parts = [sf.read(SCENES / f"{lang}_{k:02d}_m-10.wav", dtype="float32")[0] for k in range(3)]
     clip = ROOT / "data/cache/clip30.wav"
     sf.write(clip, np.concatenate(parts), SR)
@@ -112,7 +127,7 @@ def main():
               f"{m['timings_s']}; peak VRAM {pv.peak:.2f} GB; {len(out['lines'])} lines")
 
     # live loop: one ~5 s recording
-    for lang in args.lang:
+    for lang in langs:
         y = sf.read(SCENES / f"{lang}_00_clean.wav", dtype="float32")[0]
         rec = y[int(0.4 * SR): int(5.4 * SR)]
         times = []
@@ -120,7 +135,6 @@ def main():
             t = time.time(); analyze_line(models, rec, lang); times.append(time.time() - t)
         print(f"live loop {lang}: 5 s recording -> {np.median(times[1:]):.2f} s (median of 5 warm runs, "
               f"first {times[0]:.2f} s)")
-    (ROOT / "data/cache/eval_pipeline.json").write_text(json.dumps(results, indent=1))
 
 
 if __name__ == "__main__":

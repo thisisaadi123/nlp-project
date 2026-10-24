@@ -66,7 +66,8 @@ Rules:
    Tamil "anni" is a sister-in-law, never an elder sister.
 8. Verb and adjective forms follow "speaker_gender" and "addressee_gender" wherever the target
    language marks gender (a male speaker in Hindi says "keh raha hoon", not "keh rahi hoon").
-9. Write the translation in the target language's own script. Also give a romanization a
+9. Write numbers as words, the way they are said ("six hundred rupees", not "600" or "₹600").
+10. Write the translation in the target language's own script. Also give a romanization a
    non-reader can pronounce from, in casual English spelling (e.g. "anna, enna panna?"), not
    scholarly diacritics.
 Answer with JSON only."""

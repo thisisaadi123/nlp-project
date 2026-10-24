@@ -16,6 +16,8 @@ _TOKEN = re.compile(r"[\wऀ-෿]+")
 
 
 def _words(text: str) -> list[str]:
+    # "ফি-র" is one word, as speech-to-text writes it (\w alone misses Indic vowel signs like ি)
+    text = re.sub(r"(?<=[\w\u0900-\u0DFF])-(?=[\w\u0900-\u0DFF])", "", text)
     return [w.strip("।॥") for w in _TOKEN.findall(text) if w.strip("।॥")]
 
 
@@ -30,7 +32,7 @@ def _same(a: str, b: str) -> bool:
 def check(heard: str, expected: str, lang: str) -> dict:
     """{"score": share of the line's words said right (0..1),
         "words": [{"word": <line word>, "ok": bool, "heard": <what was heard there, or None>}]}"""
-    exp = _words(expected)
+    exp = [w for w in _words(expected) if not any(ch.isdigit() for ch in w)]   # "600" is said however the player likes
     # speech-to-text writes numbers as digits ("₹600"); the line spells them out, so digits are dropped
     heard_words = _words(heard)
     is_number = [any(ch.isdigit() for ch in w) for w in heard_words]

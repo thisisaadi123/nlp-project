@@ -21,7 +21,9 @@ RELATIONS = {
         "mr": ["दादा", "भाऊ"], "te": ["అన్న"]},
         "heard": {"hi": ["भैया", "भइया"], "bn": ["দাদা"], "mr": ["दादा"]}},
     "father's sister": {"say": {
-        "ta": ["அத்தை"], "hi": ["बुआ"], "bn": ["পিসি"], "mr": ["आत्या"], "te": ["అత్త"]}},
+        "ta": ["அத்தை"], "hi": ["बुआ"], "bn": ["পিসি"], "mr": ["आत्या"], "te": ["అత్త"]},
+        # spoken Tamil says அத்த; only as a whole word (அத்தனை, "that many", is not an aunt)
+        "heard": {"ta": ["அத்தை", "=அத்த"]}},
 }
 # Source stems that must not be read as a relation in that language (அண்ணாமலை is a name).
 NOT_A_RELATION = {"ta": ["அண்ணாமலை"]}
@@ -32,7 +34,8 @@ _WORD = re.compile(r"[\wऀ-෿]+")
 
 
 def _has(text: str, stems: list[str]) -> bool:
-    return any(s in w for w in _WORD.findall(text) for s in stems)
+    """A stem matches inside a word; "=word" matches only that whole word."""
+    return any(w == s[1:] if s.startswith("=") else s in w for w in _WORD.findall(text) for s in stems)
 
 
 def replace_particles(translation: str, tgt: str) -> str:

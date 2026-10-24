@@ -381,3 +381,9 @@ def test_feedback_is_stored_without_audio(api, tmp_path, monkeypatch):
     assert row == {"clip": "zz_01.hi-ta", "line": 0, "score": 62.5, "parts": {"timing": 80, "volume": 40}, "fair": False}
     assert api.post("/api/feedback", data={"clip": "nope", "line": 0, "score": 1, "fair": "true"}).status_code == 404
     assert api.post("/api/feedback", data={"clip": "zz_01.hi-ta", "line": 0, "score": 900, "fair": "true"}).status_code == 400
+
+
+def test_word_check_ignores_digits_and_keeps_hyphenated_words_whole():
+    from backend.game.words import check
+    r = check("এখন বলছি তো ল্যাবের ফির জন্য ৬০০ টাকা দে বৌদি", "এখন বলছি তো, ল্যাবের ফি-র জন্য 600 টাকা দে বৌদি।", "bn")
+    assert r["score"] == 1.0

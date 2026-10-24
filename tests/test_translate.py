@@ -188,3 +188,9 @@ def test_a_romanization_that_changes_words_is_not_used():
     assert c(None, "ठीक आहे वहिनी.", "mr", "Theek hai Vahini.") == "theek aahe vahinee."
     # a faithful one is kept
     assert c(None, "घरी गेलास का?", "mr", "Ghari gelaas ka?") == "Ghari gelaas ka?"
+
+
+def test_spoken_aunt_counts_but_not_inside_other_words():
+    from backend.pipeline.translate.kinship import kinship_issues
+    assert kinship_issues("ஆயிருந்தா அத்த பொண்ணா இருந்தா", "যদি ওই আন্টি হতেন।", "ta", "bn") == ["father's sister: use পিসি"]
+    assert kinship_issues("அத்தனை பேரு வந்தாங்க", "এত লোক এসেছে।", "ta", "bn") == []

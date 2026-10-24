@@ -206,12 +206,12 @@ def _cerebras(model: str, messages: list[dict], max_tokens: int, effort: str | N
 
 
 def _gemini(messages: list[dict], max_tokens: int, images: list[bytes] = (), model: str | None = None,
-            video: bytes | None = None) -> dict:
+            video: bytes | None = None, timeout: float = 180, attempts: int = 4) -> dict:
     """Gemini with GEMINI_API_KEY, then the backup keys once a key's daily limit is hit."""
     keys = secrets("GEMINI_API_KEY")
     for i, key in enumerate(keys):
         try:
-            return _gemini_key(key, messages, max_tokens, images, model, video)
+            return _gemini_key(key, messages, max_tokens, images, model, video, timeout, attempts)
         except DailyLimit:
             if i == len(keys) - 1:
                 raise
@@ -219,7 +219,7 @@ def _gemini(messages: list[dict], max_tokens: int, images: list[bytes] = (), mod
 
 
 def _gemini_key(key: str, messages: list[dict], max_tokens: int, images: list[bytes] = (),
-                model: str | None = None, video: bytes | None = None) -> dict:
+                model: str | None = None, video: bytes | None = None, timeout: float = 180, attempts: int = 4) -> dict:
     model = model or config()["llm"]["fallback_model"]
     system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
     parts = [{"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(img).decode()}} for img in images]
@@ -231,10 +231,10 @@ def _gemini_key(key: str, messages: list[dict], max_tokens: int, images: list[by
                                  "temperature": config()["llm"]["temperature"]}}
     if system:
         body["systemInstruction"] = {"parts": [{"text": system}]}
-    for attempt in range(4):
+    for attempt in range(attempts):
         try:
             r = httpx.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-                           headers={"x-goog-api-key": key}, json=body, timeout=180)
+                           headers={"x-goog-api-key": key}, json=body, timeout=timeout)
         except httpx.TransportError:
             time.sleep(5 * (attempt + 1))
             continue
@@ -332,14 +332,23 @@ def chat_json(messages: list[dict], max_tokens: int = 4000, effort: str = "mediu
     return _cached(payload, call, validate, primary=main) if cache else call()
 
 
-def video_json(prompt: str, video: bytes, cache: bool = True, validate=None, model: str | None = None) -> dict:
-    """Gemini watching a short video (inline, keep it a few MB) -> parsed JSON dict."""
+def video_json(prompt: str, video: bytes, cache: bool = True, validate=None, models: list[str] | None = None) -> dict:
+    """Gemini watching a short video (inline, keep it a few MB) -> parsed JSON dict. `models` are
+    tried in order, each with a short timeout: one Gemini model can hang for minutes (it did) while
+    another answers in seconds."""
+    models = models or [config()["llm"]["fallback_model"]]
     digest = hashlib.sha256(video).hexdigest()
-    payload = {"kind": "video", "model": model or config()["llm"]["fallback_model"], "prompt": prompt, "video": digest}
+    payload = {"kind": "video", "models": models, "prompt": prompt, "video": digest}
 
     def call():
-        return {**_gemini([{"role": "user", "content": prompt}], GEMINI_MAX_TOKENS, model=model, video=video),
-                "_provider": "gemini"}
+        errors = []
+        for m in models:
+            try:
+                return {**_gemini([{"role": "user", "content": prompt}], GEMINI_MAX_TOKENS, model=m, video=video,
+                                  timeout=75, attempts=2), "_provider": f"gemini:{m}"}
+            except LLMError as e:
+                errors.append(f"{m}: {e}")
+        raise LLMError("; ".join(errors))
 
     return _cached(payload, call, validate) if cache else call()
 

@@ -131,11 +131,20 @@ def status(job_id: str) -> dict:
     return {k: v for k, v in s.items() if k != "updated"} | {"labels": dict(STEPS)}
 
 
+def language_code(said) -> str | None:
+    """"hi", "hin", "Hindi" or "हिन्दी" -> "hi"; None for anything else."""
+    said = str(said or "").strip().lower()
+    for code, info in config()["languages"].items():
+        if said in (code, info["name"].lower(), info["name"].lower()[:3]) or said.startswith(info["name"].lower()):
+            return code
+    return {"hin": "hi", "tam": "ta", "ben": "bn", "mar": "mr", "tel": "te"}.get(said[:3])
+
+
 def _label(job: Path, clip: Path) -> dict:
     small = job / "small.mp4"      # a few MB is plenty to judge the scene and keeps the request small
     _ffmpeg("-i", str(clip), "-vf", "scale=-2:360", "-c:v", "libx264", "-crf", "32", "-preset", "veryfast",
             "-c:a", "aac", "-b:a", "64k", "-ac", "1", str(small))
-    label = video_json(PROMPT.format(emotions="/".join(EMOTIONS)), small.read_bytes(),
+    label = video_json(PROMPT.format(emotions="/".join(EMOTIONS)), small.read_bytes(), models=_cfg()["gemini_models"],
                        validate=lambda r: isinstance(r.get("lines"), list) and isinstance(r.get("family_safe"), dict))
     (job / "label.json").write_text(json.dumps(label, ensure_ascii=False, indent=1))
     return label
@@ -171,7 +180,7 @@ def _run(job_id: str) -> None:
         if not safe.get("ok", False):
             raise UploadError(f"This clip has {safe.get('reason') or 'content'} the game can't use. "
                               "Pick a family-friendly scene.")
-        src = s.get("source") or label.get("language_spoken")
+        src = s.get("source") or language_code(label.get("language_spoken"))
         if src not in config()["languages"]:
             raise UploadError("We couldn't hear Hindi, Tamil, Bengali, Marathi or Telugu in this clip.")
         if src == s["target"]:

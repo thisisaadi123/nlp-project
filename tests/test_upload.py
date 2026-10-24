@@ -30,7 +30,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr(upload, "library_dir", lambda: lib)
     monkeypatch.setattr(L, "library_dir", lambda: lib)
     monkeypatch.setattr(upload, "_worker", Now())
-    monkeypatch.setattr(upload, "video_json", lambda prompt, video, **k: label())
+    monkeypatch.setattr(upload, "video_json", lambda prompt, video, **k: label())   # noqa: E731
     monkeypatch.setattr(stt, "_call", lambda y, code, sr: {"transcript": "भैया ये क्या कर दिया"})
     from backend.pipeline import dub as D
     dubbed = json.loads(dub_json(tmp_path).read_text())
@@ -90,3 +90,8 @@ def test_upload_api_needs_consent_and_reports_problems(env, clip):  # noqa: F811
     assert client.post("/api/uploads", data={"target": "hi", "source": "hi", "consent": "true"}, files=files).status_code == 422
     r = client.post("/api/uploads", data={"target": "ta", "consent": "true"}, files=files)
     assert r.status_code == 200 and client.get(f"/api/uploads/{r.json()['id']}").json()["state"] == "ready"
+
+
+def test_language_names_and_codes_are_understood():
+    assert [upload.language_code(x) for x in ("hi", "hin", "Hindi", "TAMIL", "tel", "other", None)] == \
+        ["hi", "hi", "hi", "ta", "te", None, None]
